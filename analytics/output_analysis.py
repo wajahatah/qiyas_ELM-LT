@@ -1,0 +1,453 @@
+from collections import deque
+import numpy as np
+from datetime import datetime
+import re
+import math
+import constants
+import cv2
+# from analytics.test_binary_classifier import Gaze_Inference
+from poseyolo import ypose
+import time
+
+
+buffer_size = constants.action_window_buffer_size
+action_buffer = deque(maxlen=buffer_size)
+# looking_around_model = Gaze_Inference()
+looking_around_model2 = ypose()
+
+## Estimating sitting order of the candidates
+def candidate_number_head(head, desk_bbox):
+    keys = list(desk_bbox.keys())
+    candidate_num = 0
+    center_point = ((head[0]+head[2])/2,(head[1]+head[3])/2)
+    for dsk in keys :
+        if desk_bbox[dsk]['xmax'] >= center_point[0] >= desk_bbox[dsk]['xmin'] and desk_bbox[dsk]['ymax'] >= center_point[1] >= desk_bbox[dsk]['ymin']:
+            candidate_num = int(dsk) 
+
+    if candidate_num > 0:
+        return candidate_num
+    else:
+        return print("No Candidate found in selected ROI")
+
+
+"""
+## Estimating sitting order of the candidates using gaze point
+def candidate_number(gaze_point, desk_bbox):
+    keys = []
+    for key in desk_bbox.keys() :
+        keys.append(key)
+    candidate_num = 0
+    for dsk in keys :
+        if desk_bbox[dsk]['xmax'] >= gaze_point.head_x >= desk_bbox[dsk]['xmin'] and desk_bbox[dsk]['ymax'] >= gaze_point.head_y >= desk_bbox[dsk]['ymin']:
+            candidate_num = int(dsk) 
+
+    if candidate_num > 0:
+        return candidate_num
+    else:
+        return print("No Candidate found in selected ROI")
+"""
+
+## Estimating if gaze point lies inside the bbox of objects 
+def gaze_in_bbox(gaze_point, bbox):
+            return gaze_point.gaze_x > bbox[0] and gaze_point.gaze_x < bbox[2] and gaze_point.gaze_y > bbox[1] and gaze_point.gaze_y < bbox[3]
+
+## Estimating attention score of individual candidate
+def individual_Attention_score(user):
+    good_act = user['keyboard'] + user['monitor'] + user['computer'] + user['mobile phone']
+    bad_act = user['Other']
+    IAS = round((good_act / (good_act + bad_act)) * 100, 2)
+    return IAS
+
+def remove_numbers(item):
+    if isinstance(item, list):
+        return [re.sub(r'\[\d+\.\d+\]', '', elem).strip() for elem in item]
+    elif isinstance(item, str):
+        return re.sub(r'\[\d+\.\d+\]', '', item).strip()
+    return item
+
+def calculate_iou(box, roi):
+    # Calculate intersection
+    ixmin = max(box[0], roi["xmin"])
+    iymin = max(box[1], roi["ymin"])
+    ixmax = min(box[2], roi["xmax"])
+    iymax = min(box[3], roi["ymax"])
+    iw = max(ixmax - ixmin + 1, 0)
+    ih = max(iymax - iymin + 1, 0)
+    intersection = iw * ih
+
+    # Calculate union
+    box_area = (box[2] - box[0] + 1) * (box[3] - box[1] + 1)
+    roi_area = (roi["xmax"] - roi["xmin"] + 1) * (roi["ymax"] - roi["ymin"] + 1)
+    union = box_area + roi_area - intersection
+
+    # IoU
+    iou = intersection / union
+    return iou
+
+def calculate_area(box):
+    """Calculates the area of a bounding box."""
+    x_min, y_min, x_max, y_max = box
+    return max(0, x_max - x_min) * max(0, y_max - y_min)
+
+def calculate_intersection_area(box1, box2):
+    """Calculates the intersection area between two bounding boxes."""
+    x_min1, y_min1, x_max1, y_max1 = box1
+    x_min2, y_min2, x_max2, y_max2 = box2
+
+    # Find overlap coordinates
+    x_min_inter = max(x_min1, x_min2)
+    y_min_inter = max(y_min1, y_min2)
+    x_max_inter = min(x_max1, x_max2)
+    y_max_inter = min(y_max1, y_max2)
+
+    # Calculate intersection area
+    return calculate_area((x_min_inter, y_min_inter, x_max_inter, y_max_inter))
+
+
+def calculate_percentage_coverage(ground_truth_box, predicted_box):
+    """Calculates the percentage of the ground truth box area covered by the predicted box."""
+    intersection_area = calculate_intersection_area(ground_truth_box, predicted_box)
+    ground_truth_area = calculate_area(ground_truth_box)
+
+    # Calculate percentage coverage
+    if ground_truth_area == 0:
+        return 0  # Avoid division by zero
+    return (intersection_area / ground_truth_area) * 100
+
+
+def find_roi_with_max_iou(bboxes, rois, stand_head):
+    ##### Old IOU Logic
+    # results = []  
+    # for bbox in bboxes:
+    #     max_iou = 0
+    #     best_roi = None
+    #     for region_id, roi in rois.items():
+    #         iou = calculate_iou(bbox, roi)
+    #         # print("box :",bbox)
+           
+    #         # overlap = calculate_percentage_coverage(,(roi['xmin'],roi['ymin'],roi['xmax'],roi['ymax']))
+    #         # if overlap > 20:
+    #         #     print("****\nregion ID",region_id)
+    #         #     print("Overlap",overlap,"\n*****")
+    #         if iou > max_iou:
+    #             max_iou = iou
+    #             best_roi = (region_id, iou)
+    #     if best_roi:
+    #         results.append(best_roi[0])
+    ##### End of old IOU Logic
+    overling= []
+    for s_head in stand_head:
+        for region_id, roi in rois.items():
+            overlap = calculate_percentage_coverage((s_head[0],s_head[1],s_head[2],s_head[3]),(roi['xmin'],roi['ymin'],roi['xmax'],roi['ymax']))
+            if overlap > constants.overlap_threshold:
+                overling.append(region_id)
+    return overling
+
+
+def visual_region(center_point, th_angle):
+    length = 150  # Length of the lines
+
+    # Convert degrees to radians
+    angle_rad = th_angle*(3.142/180)
+
+    # Calculate the endpoint for the 30-degree line
+    left_end_point_1 = (
+        int(center_point[0] - (length * math.sin(angle_rad))),
+        int(center_point[1] - length * math.cos(angle_rad))
+    )
+
+    # Calculate the endpoint for the -30-degree line
+    right_end_point_2 = (
+        int(center_point[0] + (length * math.sin(angle_rad))),
+        int(center_point[1] - (length * math.cos(angle_rad)))
+    )
+
+    return left_end_point_1, right_end_point_2
+
+def get_angle(x1, y1, x2, y2):
+        # Avoid division by zero (vertical line case)
+        if x1 == x2:
+            return 0  # Line coincides with vertical line, angle is 0
+
+        # Calculate slope
+        m = (y2 - y1) / (x2 - x1)
+
+        # Calculate complementary angle using arctangent
+        angle_rad = np.arctan2([y2 - y1], [x2- x1]) * (180 / np.pi)
+
+        # angle_rad += 90
+
+        return angle_rad
+
+import math
+
+def draw_angle_line(frame, center, angle, length=100):
+    # Convert angle to radians for trigonometric functions
+    angle_rad = math.radians(angle)
+    print("line")
+    # Calculate endpoint based on angle and length
+    end_x = int(center[0] + length * math.cos(angle_rad))
+    end_y = int(center[1] - length * math.sin(angle_rad))  # Subtract because y-axis is inverted in images
+    print("end",end_x,end_y)
+    # Draw the line
+    return cv2.line(frame, center, (end_x, end_y), (0, 255, 0), 4)
+
+
+# def analytical_computation(candidate_score, action_model_output, gaze_point, object_detection, desk_roi, initial_appends, before, hand_flag, stand_flag, heads, stand_bbox, frame, config_dict, raw_frame,stand_head):
+def analytical_computation(candidate_score, desk_roi, initial_appends, before, hand_flag, heads, heads_dict, stand_bbox, frame, config_dict, raw_frame,stand_head,pose_data):
+      
+    frame_visual_area = frame  
+    cand_curr_info = {1: {'Other' : 0,
+                          'Att_Score' : 0},
+                      2: {'Other' : 0,
+                          'Att_Score' : 0},
+                      3: {'Other' : 0,
+                          'Att_Score' : 0},
+                      4: {'Other' : 0,
+                          'Att_Score' : 0}}
+
+    candidate_order = []
+    head_candidate_mapping = {}
+
+    alert_notification = []
+    action_final = []
+
+    actions_classes = ['raising hand', 'using mobile phone', 'student interacting with invigilator']
+    action_matrix = [[0 for _ in range(4)] for _ in range(4)]
+
+    action_anomaly_precedence_dict = constants.action_anomaly_precedence_dict
+    action_precedence = list(action_anomaly_precedence_dict.values())
+    action_precedence_names = list(action_anomaly_precedence_dict.keys())
+
+
+    absent_candidates = {
+    'card_resetting': {
+        1: False,
+        2: False,
+        3: False,
+        4: False }}
+    
+    # print("heads:")
+    
+    for gz in range(len(heads)):
+        candidate_num = candidate_number_head(heads[gz], desk_roi)
+        
+    # for key, value in heads.items():
+    #     candidate_num = candidate_number_head(value, desk_roi)
+        if candidate_num is None:
+            continue  # if no head in any of the ROI then skip all computation
+        
+        if candidate_num not in candidate_order:
+            candidate_order.append(candidate_num)
+            head_candidate_mapping[candidate_num] = gz
+
+    # candidate_bool["Score"] = score
+    current_time = datetime.now().time()
+    formatted_time = current_time.strftime('%H:%M:%S')
+
+    # candidate_bool["Time"] = formatted_time
+    cand_curr_info["Time"] = formatted_time
+
+    # Initialize a new list of 4 elements with empty strings
+    candidate_action = [''] * 4
+
+    # adding abscent in place where no candidate found remove probability values from the begining of the text
+    processed_action = ['absent' if not elem else remove_numbers(elem) for elem in candidate_action]
+    
+    looking_around_list = [0,0,0,0]
+
+    while len(candidate_order) < len(hand_flag):
+        candidate_order.append(0)
+    hand_flag = np.array(hand_flag) * np.array(candidate_order)
+    hand_flag = hand_flag.tolist()
+
+    """
+    #Looking around using gaze detection model
+    for la in gaze_candidate_mapping:
+    
+        diff = (desk_roi[str(la)]['ymax'] - desk_roi[str(la)]['ymin']) / 2
+
+        LA_angle_threshold = 90 - int((gaze_point[int(gaze_candidate_mapping.get(la))].head_y - diff) / (desk_roi[str(la)]['ymax'] - diff) * 30)
+
+        #looking around using gaze detection model
+        if abs(gaze_point[int(gaze_candidate_mapping.get(la))].angle) < LA_angle_threshold:
+            looking_around_list[la-1] = 0
+
+        elif abs(gaze_point[int(gaze_candidate_mapping.get(la))].angle) > LA_angle_threshold:
+            looking_around_list[la-1] = 1
+
+    #Looking around using head classifier    
+    from test_binary_classifier import Gaze_Inference
+    looking_around_model = Gaze_inference()
+    for la in gaze_candidate_mapping:
+        
+        LA_angle_threshold = 90 - int((heads[int(gaze_candidate_mapping.get(la))][3] / desk_roi[str(la)]['ymax']) * 30)
+        diff = (desk_roi[str(la)]['ymax'] - desk_roi[str(la)]['ymin']) / 2
+        LA_angle_threshold = 90 - int((gaze_point[int(gaze_candidate_mapping.get(la))].head_y - diff) / (desk_roi[str(la)]['ymax'] - diff) * 30)
+
+        # looking around using head detector model
+        head_bbox = [int(heads[int(gaze_candidate_mapping.get(la))][0]), int(heads[int(gaze_candidate_mapping.get(la))][1]), int(heads[int(gaze_candidate_mapping.get(la))][2]), int(heads[int(gaze_candidate_mapping.get(la))][3])]
+
+        looking_around_list[la-1] = looking_around_model.get_inference(raw_frame, head_bbox)
+        
+    
+    # print("out_head", heads)
+    # print("pose data", pose_data)
+    # myhead_bbox = {}
+    # for la in head_candidate_mapping:
+        # myhead_bbox[la] = [int(heads[int(head_candidate_mapping.get(la))][0]), int(heads[int(head_candidate_mapping.get(la))][1]), int(heads[int(head_candidate_mapping.get(la))][2]), int(heads[int(head_candidate_mapping.get(la))][3])]
+    # print("head dict", myhead_bbox)
+    # print("mapping",head_candidate_mapping)
+        # for la in pose_data and pose_data[la] is not None:
+    
+    # updated_dict ={}
+    # for la in head_candidate_mapping:
+    # for key, value in myhead_bbox.items():
+        # if (value[0] < pose_data[key]['Cx'] < value[2]) and (value[1]<pose_data[key]['Cy']<value[3]):
+            # id = key
+            # updated_dict[key-1] = {'Ax': pose_data[key]['Ax'], 'Ay': pose_data[key]['Ay'], 'Bx':pose_data[key]['Bx'], 'By':pose_data[key]['By']}
+    
+    # print("updated",updated_dict)
+    # print("Id assigned:",id,key)
+
+    # for key in pose_data:# and head_candidate_mapping:
+    # for la in head_candidate_mapping:
+    # if la in head_candidate_mapping:# is not None:
+    # if heads is not None:
+            # and head_candidate_mapping:
+    # for la in head_candidate_mapping:
+        # if (myhead_bbox[key] = [int(heads[int(head_candidate_mapping.get(key))][0]), int(heads[int(head_candidate_mapping.get(key))][1]), int(heads[int(head_candidate_mapping.get(key))][2]), int(heads[int(head_candidate_mapping.get(key))][3])]):
+        # if heads in not None
+        # if key in head_candidate_mapping == key in pose_data:
+        # if myhead_bbox[la] is not None:
+            # print("in loop --------------------")
+            # a,b = int(pose_data[la]['Ax']), int(pose_data[la]['Ay'])
+            # e,d = int(pose_data[la]['Bx']), int(pose_data[la]['By'])
+            # a,b = int(updated_dict[la]['Ax']), int(updated_dict[la]['Ay'])
+            # e,d = int(updated_dict[la]['Bx']), int(updated_dict[la]['By'])
+
+# #                    if head_bbox.get(1)[0] < Cx < head_bbox.get(1)[2]: id = 1
+#         break
+
+#     # pose_data = looking_around_model2.pose(frame, myhead_bbox)
+    
+#     allowed_angle = 60
+#     for la in head_candidate_mapping:
+#         if la in pose_data and pose_data[la] is not None:
+# '''
+"""
+
+    # allowed_angle = 60
+    for key in pose_data:
+            a,b = int(pose_data[key]['Ax']), int(pose_data[key]['Ay'])
+            e,d = int(pose_data[key]['Bx']), int(pose_data[key]['By'])
+            print("a,b,e,d",a,b,e,d)
+            angle = get_angle(a,b,e,d) 
+            
+            diff = (desk_roi[str(key)]['ymax'] - desk_roi[str(key)]['ymin']) / 2
+
+            LA_angle_threshold = 60 - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 30)
+            
+            if abs(angle) < LA_angle_threshold:
+                looking_around_list[int(key)-1] = 0
+
+            elif abs(angle) > LA_angle_threshold:
+                looking_around_list[int(key)-1] = 1
+                # cv2.putText(frame, "looking around", center,(255,55,158),2)
+            
+
+            if config_dict.get('visual_field_drawing'):
+                center = (int((a+e)/2), int((b+d)/2))
+                left_point, right_point = visual_region(center, LA_angle_threshold)
+                # frame_visual_area = cv2.line(frame, center, (center[0],center[1]-50), (255, 255, 255), 4)
+                frame_visual_area = draw_angle_line(frame, center, LA_angle_threshold)
+                frame_visual_area = cv2.line(frame, center, left_point, (255, 255, 255), 4)
+                frame_visual_area = cv2.line(frame, center, right_point, (255, 255, 255), 4) 
+
+
+    ## Iterate over the persons_actions list and fill in the action_matrix (4X4) where rows represent students and column represent actions
+    for i, person in enumerate(processed_action):
+        if person != 'absent' and person != 'No action':
+            for action in person:
+                if action in actions_classes:
+                    action_index = actions_classes.index(action)
+                    action_matrix[i][action_index] = 1
+
+    # Incorporate the looking_around_list into the action_matrix at 4th column 
+    for i, looking_around in enumerate(looking_around_list):
+        action_matrix[i][3] = looking_around
+
+    Stand_max_iou_roi = find_roi_with_max_iou(stand_bbox, desk_roi,stand_head)
+    ## overwriting YowoV2 output with Yolov5 output for hand raise.
+    for k in range (len(action_matrix)):
+        if k+1 in hand_flag:
+            action_matrix[k][actions_classes.index('raising hand')] = 1
+        else:
+            action_matrix[k][actions_classes.index('raising hand')] = 0
+
+    ## overwriting YowoV2 output with roi based output for student inteacting with invigilator.
+    for k in range (len(action_matrix)):
+        if str(k + 1) in Stand_max_iou_roi and (k+1) in candidate_order:
+            action_matrix[k][actions_classes.index('student interacting with invigilator')] = 1
+        else:
+            action_matrix[k][actions_classes.index('student interacting with invigilator')] = 0
+    
+    ## To fill the buffer until it reaches its max limit
+    if initial_appends:
+        action_buffer.append(action_matrix)
+        if len(action_buffer) == buffer_size:
+            initial_appends = False
+
+    ## As the buffer reaches its limit, its computation started with sliding window     
+    else:
+        # Calculating the average of the actions in buffer for each candidate
+        avg_action = np.mean(action_buffer, axis=0)
+        
+        # Identify actions where the average exceeds 0.8 for each person
+        exceeds_threshold = (avg_action > constants.avg_action_threshold).astype(int)
+
+        ## checking if the average of actions in buffer exist in the present new frame
+        current_comparison = (exceeds_threshold & action_matrix).astype(int)
+        current_comparison = current_comparison.tolist()
+        
+        #updating current comparison with strings based on precedence of actions if there were two or more actions found for same person.
+        comparison_updated = []
+        for hi,c in enumerate(current_comparison):
+
+            c2 = sum(np.multiply(c, action_precedence))
+            if c2 == 0:
+                comparison_updated.append('Normal')
+
+            elif c2 >= 8:
+                comparison_updated.append(action_precedence_names[action_precedence.index(8)])
+
+            elif c2 >= 4: # only hand raise if the yolov5 model for hand raise detection confirms its presence.
+                comparison_updated.append(action_precedence_names[action_precedence.index(4)])
+
+            elif c2 >= 2:
+                comparison_updated.append(action_precedence_names[action_precedence.index(2)])
+            else:
+                comparison_updated.append(action_precedence_names[action_precedence.index(1)])
+
+        for index, (bef, curr) in enumerate(zip(before, comparison_updated)):
+            if bef == curr:
+                action_final.append(curr)
+            elif curr == "Normal":
+                action_final.append(curr)
+            else:
+                alert_notification.append({index+1:{"id":datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"alert_title":curr}})
+                action_final.append(curr)
+        
+        before = action_final
+        action_buffer.append(action_matrix)
+
+    ## finding the abscent candidate to send to frontend for reset everything
+    missing_candidates = list(set(constants.candidate_list) - set(candidate_order))
+    # Sort the missing candidate to maintain a consistent order
+    missing_candidates.sort(key=lambda x: constants.candidate_list.index(x))
+
+    for mis_cand in missing_candidates:
+        if mis_cand in absent_candidates['card_resetting']:
+            absent_candidates['card_resetting'][mis_cand] = True
+
+    return candidate_score, cand_curr_info, alert_notification, action_final, initial_appends, before, absent_candidates, frame_visual_area
