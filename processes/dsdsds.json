@@ -1,0 +1,46 @@
+{
+    "_id": "camera_2",
+    "url": "test_bench/Cam_19_02.mp4",
+    "data": {
+      "1": {
+        "xmin": 30,
+        "ymin": 90,
+        "xmax": 367,
+        "ymax": 570,
+        "left_x": 99,
+        "left_y": 309,
+        "right_x": 360,
+        "right_y": 276
+      },
+      "2": {
+        "xmin": 370,
+        "ymin": 90,
+        "xmax": 730,
+        "ymax": 570,
+        "left_x": 401,
+        "left_y": 335,
+        "right_x": 712,
+        "right_y": 316
+      },
+      "3": {
+        "xmin": 740,
+        "ymin": 90,
+        "xmax": 1075,
+        "ymax": 570,
+        "left_x": 757,
+        "left_y": 269,
+        "right_x": 1002,
+        "right_y": 254
+      },
+      "4": {
+        "xmin": 1080,
+        "ymin": 90,
+        "xmax": 1280,
+        "ymax": 470,
+        "left_x": 1106,
+        "left_y": 299,
+        "right_x": 1264,
+        "right_y": 301
+      }
+    }
+  }
