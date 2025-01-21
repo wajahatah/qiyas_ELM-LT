@@ -113,7 +113,7 @@ class ypose:
                         # x, y, confidence = kp
                         x, y, confidence = kp[0].item(), kp[1].item(), kp[2].item()
                         # if confidence > 0.5:  # Optional: Only draw keypoints with sufficient confidence
-                        cv2.circle(frame, (int(x), int(y)), 2, (0, 255, 0), -1)  # Draw the keypoint
+                        # cv2.circle(frame, (int(x), int(y)), 2, (0, 255, 0), 3)  # Draw the keypoint
                             # cv2.drawMarker(frame, (int(x), int(y)), (0, 0, 255), markerType=cv2.MARKER_STAR, markerSize=10, thickness=2)
                             # cv2.putText(
                             #     frame,
@@ -126,8 +126,8 @@ class ypose:
                             # )
                     # print("person", person_keypoints, "type", type(person_keypoints))
                     C = person_keypoints[0]  # Keypoint 0
-                    A = person_keypoints[1]  # Keypoint 2
-                    B = person_keypoints[2]  # Keypoint 3
+                    A = person_keypoints[2]  # Keypoint 2
+                    B = person_keypoints[3]  # Keypoint 3
 
                     Cx=int(C[0].item())
                     Cy=int(C[1].item())

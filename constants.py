@@ -18,9 +18,9 @@ avg_action_threshold = 0.8
 
 candidate_list = [1,2,3,4]
 
-desk_roi_drawing = False
+desk_roi_drawing = True
 objects_drawing = False
-hand_bbox_drawing = False
+hand_bbox_drawing = True
 head_bbox_drawing = False
 desk_number_drawing = True
 visual_field_drawing = True
