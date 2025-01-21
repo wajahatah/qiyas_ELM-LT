@@ -8,7 +8,7 @@ import cv2
 # from analytics.test_binary_classifier import Gaze_Inference
 from poseyolo import ypose
 import time
-
+from matplotlib.path import Path
 
 buffer_size = constants.action_window_buffer_size
 action_buffer = deque(maxlen=buffer_size)
@@ -183,14 +183,20 @@ import math
 
 def draw_angle_line(frame, center, angle, length=100):
     # Convert angle to radians for trigonometric functions
-    angle_rad = math.radians(angle)
-    print("line")
+    # angle_rad = math.radians(90) + math.radians(angle)
+    angle_rad =  math.radians(angle)
+    # print("line")
     # Calculate endpoint based on angle and length
     end_x = int(center[0] + length * math.cos(angle_rad))
     end_y = int(center[1] - length * math.sin(angle_rad))  # Subtract because y-axis is inverted in images
-    print("end",end_x,end_y)
+    # print("end",end_x,end_y)
     # Draw the line
     return cv2.line(frame, center, (end_x, end_y), (0, 255, 0), 4)
+
+def create_polygon(*points):
+    # Convert points to a list and ensure the polygon is closed
+    polygon = list(points) + [points[0]]
+    return Path(polygon)
 
 
 # def analytical_computation(candidate_score, action_model_output, gaze_point, object_detection, desk_roi, initial_appends, before, hand_flag, stand_flag, heads, stand_bbox, frame, config_dict, raw_frame,stand_head):
@@ -261,92 +267,69 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
     hand_flag = np.array(hand_flag) * np.array(candidate_order)
     hand_flag = hand_flag.tolist()
 
-    """
-    #Looking around using gaze detection model
-    for la in gaze_candidate_mapping:
-    
-        diff = (desk_roi[str(la)]['ymax'] - desk_roi[str(la)]['ymin']) / 2
-
-        LA_angle_threshold = 90 - int((gaze_point[int(gaze_candidate_mapping.get(la))].head_y - diff) / (desk_roi[str(la)]['ymax'] - diff) * 30)
-
-        #looking around using gaze detection model
-        if abs(gaze_point[int(gaze_candidate_mapping.get(la))].angle) < LA_angle_threshold:
-            looking_around_list[la-1] = 0
-
-        elif abs(gaze_point[int(gaze_candidate_mapping.get(la))].angle) > LA_angle_threshold:
-            looking_around_list[la-1] = 1
-
-    #Looking around using head classifier    
-    from test_binary_classifier import Gaze_Inference
-    looking_around_model = Gaze_inference()
-    for la in gaze_candidate_mapping:
-        
-        LA_angle_threshold = 90 - int((heads[int(gaze_candidate_mapping.get(la))][3] / desk_roi[str(la)]['ymax']) * 30)
-        diff = (desk_roi[str(la)]['ymax'] - desk_roi[str(la)]['ymin']) / 2
-        LA_angle_threshold = 90 - int((gaze_point[int(gaze_candidate_mapping.get(la))].head_y - diff) / (desk_roi[str(la)]['ymax'] - diff) * 30)
-
-        # looking around using head detector model
-        head_bbox = [int(heads[int(gaze_candidate_mapping.get(la))][0]), int(heads[int(gaze_candidate_mapping.get(la))][1]), int(heads[int(gaze_candidate_mapping.get(la))][2]), int(heads[int(gaze_candidate_mapping.get(la))][3])]
-
-        looking_around_list[la-1] = looking_around_model.get_inference(raw_frame, head_bbox)
-        
-    
-    # print("out_head", heads)
-    # print("pose data", pose_data)
-    # myhead_bbox = {}
-    # for la in head_candidate_mapping:
-        # myhead_bbox[la] = [int(heads[int(head_candidate_mapping.get(la))][0]), int(heads[int(head_candidate_mapping.get(la))][1]), int(heads[int(head_candidate_mapping.get(la))][2]), int(heads[int(head_candidate_mapping.get(la))][3])]
-    # print("head dict", myhead_bbox)
-    # print("mapping",head_candidate_mapping)
-        # for la in pose_data and pose_data[la] is not None:
-    
-    # updated_dict ={}
-    # for la in head_candidate_mapping:
-    # for key, value in myhead_bbox.items():
-        # if (value[0] < pose_data[key]['Cx'] < value[2]) and (value[1]<pose_data[key]['Cy']<value[3]):
-            # id = key
-            # updated_dict[key-1] = {'Ax': pose_data[key]['Ax'], 'Ay': pose_data[key]['Ay'], 'Bx':pose_data[key]['Bx'], 'By':pose_data[key]['By']}
-    
-    # print("updated",updated_dict)
-    # print("Id assigned:",id,key)
-
-    # for key in pose_data:# and head_candidate_mapping:
-    # for la in head_candidate_mapping:
-    # if la in head_candidate_mapping:# is not None:
-    # if heads is not None:
-            # and head_candidate_mapping:
-    # for la in head_candidate_mapping:
-        # if (myhead_bbox[key] = [int(heads[int(head_candidate_mapping.get(key))][0]), int(heads[int(head_candidate_mapping.get(key))][1]), int(heads[int(head_candidate_mapping.get(key))][2]), int(heads[int(head_candidate_mapping.get(key))][3])]):
-        # if heads in not None
-        # if key in head_candidate_mapping == key in pose_data:
-        # if myhead_bbox[la] is not None:
-            # print("in loop --------------------")
-            # a,b = int(pose_data[la]['Ax']), int(pose_data[la]['Ay'])
-            # e,d = int(pose_data[la]['Bx']), int(pose_data[la]['By'])
-            # a,b = int(updated_dict[la]['Ax']), int(updated_dict[la]['Ay'])
-            # e,d = int(updated_dict[la]['Bx']), int(updated_dict[la]['By'])
-
-# #                    if head_bbox.get(1)[0] < Cx < head_bbox.get(1)[2]: id = 1
-#         break
-
-#     # pose_data = looking_around_model2.pose(frame, myhead_bbox)
-    
-#     allowed_angle = 60
-#     for la in head_candidate_mapping:
-#         if la in pose_data and pose_data[la] is not None:
-# '''
-"""
-
     # allowed_angle = 60
     for key in pose_data:
             a,b = int(pose_data[key]['Ax']), int(pose_data[key]['Ay'])
             e,d = int(pose_data[key]['Bx']), int(pose_data[key]['By'])
-            print("a,b,e,d",a,b,e,d)
-            angle = get_angle(a,b,e,d) 
-            
+            hx,hy = int(pose_data[key]['Cx']), int(pose_data[key]['Cy'])
+            cv2.circle(frame, (a,b), 2, (0, 255, 0), 3) 
+            cv2.circle(frame, (e,d), 2, (0, 255, 0), 3) 
+            cv2.circle(frame, (hx,hy), 2, (0, 255, 0), 3) 
+            # print("a,b,e,d",a,b,e,d)
+            angle = get_angle(a,b,e,d)
+            cv2.line(frame, (a,b), (e, d), (0, 255, 0), 4)
+            left_point = desk_roi[str(key)]['left_x'], desk_roi[str(key)]['left_y']
+            right_point = desk_roi[str(key)]['right_x'], desk_roi[str(key)]['right_y']
+            cv2.line(frame, left_point, right_point, (0, 255, 0), 1)
+
+            """
+            # cv2.putText(frame, str(angle), (int((a+e)/2) - 10, int((b+d)/2 - 10)),cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
+            # Polygon logic
+            ### start
+            # cv2.line(frame, (a,b), (e,d), (0, 255, 0), 2)
+            # rad_angle = math.radians(90)
+            # print('key:',key)
+
+            # center = (int((a+e)/2), int((b+d)/2))
+            # # gaze = (center[0]+10,center[1]+10)
+            # end_x = int(center[0] + 10 * math.cos(rad_angle))
+            # end_y = int(center[1] - 10 * math.sin(rad_angle))
+            # gaze = (end_x,end_y)
+            # xmin = desk_roi[str(key)]['xmin']
+            # ymin = desk_roi[str(key)]['ymin']
+            # xmax = desk_roi[str(key)]['xmax']
+            # top_left = (xmin, ymin)
+            # top_right = (xmax, ymin)
+
+            # print("left_point",left_point)
+            # pri
+            # nt("right_point",right_point)
+            # polygon = create_polygon(top_right, top_left, left_point, center, right_point )
+
+            # points = np.array([top_right, top_left, left_point, center, right_point], np.int32)
+            # # points = points.reshape((-1, 1, 2))
+            # cv2.polylines(frame, [points], isClosed=True, color=(0, 255, 0), thickness=2)
+            # cv2.line(frame, center, gaze, (255, 0, 0), 3)
+            # cv2.circle(frame, gaze, 5, (0, 0, 255), -1)
+
+            # if polygon.contains_point(gaze):
+            #     looking_around_list[int(key)-1] = 0
+            # else:
+            #     looking_around_list[int(key)-1] = 1
+            #     cv2.putText(frame, "looking around", center,cv2.FONT_HERSHEY_SIMPLEX, 1,(255,55,158),2)
+            ### end
+"""
+            # center angle logic 
+            ### start
             diff = (desk_roi[str(key)]['ymax'] - desk_roi[str(key)]['ymin']) / 2
 
-            LA_angle_threshold = 60 - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 30)
+            if a and b < left_point[1] and a and b < right_point[1]:
+                allowed_angle = 90
+
+            else:
+                allowed_angle = 75
+
+            LA_angle_threshold = allowed_angle - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 30)
             
             if abs(angle) < LA_angle_threshold:
                 looking_around_list[int(key)-1] = 0
@@ -354,13 +337,15 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
             elif abs(angle) > LA_angle_threshold:
                 looking_around_list[int(key)-1] = 1
                 # cv2.putText(frame, "looking around", center,(255,55,158),2)
-            
+            ### end
+
 
             if config_dict.get('visual_field_drawing'):
                 center = (int((a+e)/2), int((b+d)/2))
+                cv2.circle(frame, center, 5, (0, 0, 255), -1)
                 left_point, right_point = visual_region(center, LA_angle_threshold)
                 # frame_visual_area = cv2.line(frame, center, (center[0],center[1]-50), (255, 255, 255), 4)
-                frame_visual_area = draw_angle_line(frame, center, LA_angle_threshold)
+                # frame_visual_area = draw_angle_line(frame, center, LA_angle_threshold)
                 frame_visual_area = cv2.line(frame, center, left_point, (255, 255, 255), 4)
                 frame_visual_area = cv2.line(frame, center, right_point, (255, 255, 255), 4) 
 
