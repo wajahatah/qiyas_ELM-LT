@@ -68,10 +68,10 @@ import time
 import cv2
 # import csv
 
-dict1 = { 'xmin':30,'ymin':90,'xmax':367,'ymax':580}
-dict2 = { 'xmin':370,'ymin':90,'xmax':730,'ymax':580}
-dict3 = { 'xmin':740,'ymin':90,'xmax':1075,'ymax':580}
-dict4 = { 'xmin':1080,'ymin':90,'xmax':1280,'ymax':580}
+# dict1 = { 'xmin':30,'ymin':90,'xmax':367,'ymax':580}
+# dict2 = { 'xmin':370,'ymin':90,'xmax':730,'ymax':580}
+# dict3 = { 'xmin':740,'ymin':90,'xmax':1075,'ymax':580}
+# dict4 = { 'xmin':1080,'ymin':90,'xmax':1280,'ymax':580}
 # global frame_count 
 
 class ypose:
@@ -129,13 +129,21 @@ class ypose:
                     A = person_keypoints[2]  # Keypoint 2
                     B = person_keypoints[3]  # Keypoint 3
 
+                    # Cx=int(C[0].item()) if C[0].item() > 0 else -1
+                    # Cy=int(C[1].item()) if C[1].item() > 0 else -1
+                    # Ax=int(A[0].item()) if A[0].item() > 0 else -1
+                    # Ay=int(A[1].item()) if A[1].item() > 0 else -1
+                    # Bx=int(B[0].item()) if B[0].item() > 0 else -1
+                    # By=int(B[1].item()) if B[1].item() > 0 else -1
+
                     Cx=int(C[0].item())
                     Cy=int(C[1].item())
-                    Ax=int(A[0].item()) 
+                    Ax=int(A[0].item())
                     Ay=int(A[1].item())
                     Bx=int(B[0].item())
                     By=int(B[1].item())
-
+                    
+                    # if Cx or Cy and Ax and Ay and Bx and By > 0:
                     for key, value in head_bbox.items():
                         if (value[0] < Cx < value[2]) and (value[1]<Cy<value[3]):
                             id = key
@@ -146,6 +154,9 @@ class ypose:
 
                             # print("Id assigned:",id,key)
                             break
+                    # else:
+                    #     mydict[id] = {'Ax': 0, 'Ay': 0, 'Bx':0, 'By':0, 'Cx':0, 'Cy':0}
+                        # person_columns[int(key)].append("N/A")
                         
         return mydict
         """

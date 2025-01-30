@@ -276,12 +276,12 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
             cv2.circle(frame, (e,d), 2, (0, 255, 0), 3) 
             cv2.circle(frame, (hx,hy), 2, (0, 255, 0), 3) 
             # print("a,b,e,d",a,b,e,d)
-            angle = get_angle(a,b,e,d)
-            cv2.line(frame, (a,b), (e, d), (0, 255, 0), 4)
             left_point = desk_roi[str(key)]['left_x'], desk_roi[str(key)]['left_y']
             right_point = desk_roi[str(key)]['right_x'], desk_roi[str(key)]['right_y']
             cv2.line(frame, left_point, right_point, (0, 255, 0), 1)
-
+            print("a",a,"b",b,"e",e,"d",d)
+            print("=====================================")
+            
             """
             # cv2.putText(frame, str(angle), (int((a+e)/2) - 10, int((b+d)/2 - 10)),cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
             # Polygon logic
@@ -321,31 +321,41 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
 """
             # center angle logic 
             ### start
-            diff = (desk_roi[str(key)]['ymax'] - desk_roi[str(key)]['ymin']) / 2
+            # if (a and b) and (e and d) and (hx and hy) > 0:
+            # if a and e > 0:
+            if b and d > 0:
+                angle = get_angle(a,b,e,d)
+                cv2.line(frame, (a,b), (e, d), (0, 255, 0), 4)
+                diff = (desk_roi[str(key)]['ymax'] - desk_roi[str(key)]['ymin']) / 2
 
-            if d and b < left_point[1] or d and b < right_point[1]:
-                allowed_angle = ex_angle
+                if d and b < left_point[1] or d and b < right_point[1]:
+                    allowed_angle = ex_angle
 
-            else:
-                allowed_angle = in_angle
+                else:
+                    allowed_angle = in_angle
 
-            LA_angle_threshold = allowed_angle - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 30)
-            
-            if abs(angle) < LA_angle_threshold:
-                looking_around_list[int(key)-1] = 0
+                LA_angle_threshold = allowed_angle - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 30)
+                
+                if abs(angle) < LA_angle_threshold:
+                    looking_around_list[int(key)-1] = 0
 
-            elif abs(angle) > LA_angle_threshold:
-                looking_around_list[int(key)-1] = 1
-                cv2.putText(frame, "looking around", (int((a+e)/2), int((b+d)/2)),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,8),2)
+                elif abs(angle) > LA_angle_threshold:
+                    looking_around_list[int(key)-1] = 1
+                    print("looking around")
+                    cv2.putText(frame, "looking around", (int((a+e)/2), int((b+d)/2)),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,8),2)
 
-            if config_dict.get('visual_field_drawing'):
-                center = (int((a+e)/2), int((b+d)/2))
-                cv2.circle(frame, center, 5, (0, 0, 255), -1)
-                left_point, right_point = visual_region(center, LA_angle_threshold)
-                # frame_visual_area = cv2.line(frame, center, (center[0],center[1]-50), (255, 255, 255), 4)
-                # frame_visual_area = draw_angle_line(frame, center, LA_angle_threshold)
-                frame_visual_area = cv2.line(frame, center, left_point, (255, 255, 255), 4)
-                frame_visual_area = cv2.line(frame, center, right_point, (255, 255, 255), 4) 
+                if config_dict.get('visual_field_drawing'):
+                    center = (int((a+e)/2), int((b+d)/2))
+                    # cx = center[0]
+                    # cy = center[1]
+
+                    cv2.putText(frame, str(center), (int((a+e)/2), int((b+d)/2)),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,8),2)
+                    cv2.circle(frame, center, 5, (0, 0, 255), -1)
+                    left_point, right_point = visual_region(center, LA_angle_threshold)
+                    # frame_visual_area = cv2.line(frame, center, (center[0],center[1]-50), (255, 255, 255), 4)
+                    # frame_visual_area = draw_angle_line(frame, center, LA_angle_threshold)
+                    frame_visual_area = cv2.line(frame, center, left_point, (255, 255, 255), 4)
+                    frame_visual_area = cv2.line(frame, center, right_point, (255, 255, 255), 4) 
 
 
     ## Iterate over the persons_actions list and fill in the action_matrix (4X4) where rows represent students and column represent actions
