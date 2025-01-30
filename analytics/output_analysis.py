@@ -200,7 +200,7 @@ def create_polygon(*points):
 
 
 # def analytical_computation(candidate_score, action_model_output, gaze_point, object_detection, desk_roi, initial_appends, before, hand_flag, stand_flag, heads, stand_bbox, frame, config_dict, raw_frame,stand_head):
-def analytical_computation(candidate_score, desk_roi, initial_appends, before, hand_flag, heads, heads_dict, stand_bbox, frame, config_dict, raw_frame,stand_head,pose_data):
+def analytical_computation(candidate_score, desk_roi, initial_appends, before, hand_flag, heads, heads_dict, stand_bbox, frame, config_dict, raw_frame,stand_head,pose_data, in_angle,ex_angle):
       
     frame_visual_area = frame  
     cand_curr_info = {1: {'Other' : 0,
@@ -266,7 +266,7 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
         candidate_order.append(0)
     hand_flag = np.array(hand_flag) * np.array(candidate_order)
     hand_flag = hand_flag.tolist()
-
+    # desk_angle = 
     # allowed_angle = 60
     for key in pose_data:
             a,b = int(pose_data[key]['Ax']), int(pose_data[key]['Ay'])
@@ -323,11 +323,11 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
             ### start
             diff = (desk_roi[str(key)]['ymax'] - desk_roi[str(key)]['ymin']) / 2
 
-            if a and b < left_point[1] and a and b < right_point[1]:
-                allowed_angle = 90
+            if d and b < left_point[1] or d and b < right_point[1]:
+                allowed_angle = ex_angle
 
             else:
-                allowed_angle = 75
+                allowed_angle = in_angle
 
             LA_angle_threshold = allowed_angle - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 30)
             
@@ -336,9 +336,7 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
 
             elif abs(angle) > LA_angle_threshold:
                 looking_around_list[int(key)-1] = 1
-                # cv2.putText(frame, "looking around", center,(255,55,158),2)
-            ### end
-
+                cv2.putText(frame, "looking around", (int((a+e)/2), int((b+d)/2)),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,8),2)
 
             if config_dict.get('visual_field_drawing'):
                 center = (int((a+e)/2), int((b+d)/2))
