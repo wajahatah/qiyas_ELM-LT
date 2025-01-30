@@ -33,7 +33,7 @@ class db_manager:
             # print(data_dict['_id'])
             # print(data_dict['url'])
             # print(data_dict['data'])
-            return data_dict['url'], data_dict['data']
+            return data_dict['url'], data_dict['data'], data_dict['i_angle'],data_dict['e_angle']
         except:
             print("Error or Data not found")
             return False

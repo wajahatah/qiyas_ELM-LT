@@ -84,7 +84,9 @@ def data_computation(quit_flag,input_queue,out_queue,refresh_flag,config_dict):
                                                                                 frame = data['processed_image'],
                                                                                 config_dict=config_dict,
                                                                                 raw_frame=data['frame'],
-                                                                                stand_head=data['stand_head']
+                                                                                stand_head=data['stand_head'],
+                                                                                in_angle=data['in_angle'],
+                                                                                ex_angle=data['ex_angle']
                                                                                 )
         # print(head_detection)
         data['analytical_computation'] = cand_curr_info
