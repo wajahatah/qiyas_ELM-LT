@@ -77,7 +77,7 @@ dict4 = { 'xmin':1080,'ymin':90,'xmax':1280,'ymax':580}
 class ypose:
     def __init__(self, verbose=True):
     # Load the YOLO model
-        self.model = YOLO("models_1/best_v11_2.pt")
+        self.model = YOLO("models_1/best11_v3.pt")
         self.model.to('cuda')
         self.verbose = verbose 
         # self.frame_count = 0
