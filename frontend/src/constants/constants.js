@@ -3,15 +3,8 @@ export const constants = {
     siteName: "[Site Name]",
     pythonBaseUrl: "http://localhost:8004",
     pythonDbUrl: "http://localhost:8005",
-
-
-    helperBaseUrl: "http://192.168.18.36:8005",
-    webSocketUrl: "ws://192.168.18.36:8005/stream/ws",
-    
-    clusterUrlPrefix: "http://",
-    clusterSocketPrefix: "ws://",
-    clusterSocketSuffix: "/stream/ws",
-    
+    // pythonBaseUrl: "http://192.168.18.10:8004",
+    // pythonDbUrl: "http://192.168.18.10:8005",
     byPassInitialApiCalling: true,
     defaultDeskName: "Desk",
 

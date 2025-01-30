@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from "react-router";
-import { useLocation } from "react-router-dom";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
@@ -9,19 +8,16 @@ import Toolbar from "@mui/material/Toolbar";
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import LanguageIcon from '@mui/icons-material/Language';
-import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
 
 import { US, SA } from 'country-flag-icons/react/3x2'
 
 import './header.css'
 import { IconButton, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 
 export default function DenseAppBar(props) {
   const { t, i18n } = useTranslation();
-  const location = useLocation();
   const navigate = useNavigate()
 
   const dispatch = useDispatch();
@@ -33,20 +29,14 @@ export default function DenseAppBar(props) {
 
   const [anchorEl, setAnchorEl] = React.useState(false);
   const open = Boolean(anchorEl);
-  const handleLanguageIconClick = (event) => { setAnchorEl(event.currentTarget) }
-  const handleCloseLanguageDropdown = () => { setAnchorEl(null) }
+  const handleClick = (event) => { setAnchorEl(event.currentTarget) }
+  const handleClose = () => { setAnchorEl(null) }
 
   const handleChangeLangDropdown = (lang) => {
     dispatch({ type: "SETLANGUAGE", payload: { lang } })
-    handleCloseLanguageDropdown()
+    handleClose()
   }
 
-  const handleOpenDownloadPDFModal = () => {
-    dispatch({ type: "SETDOWNLOADPDFMODAL", payload: { downloadPDFModal: true } })
-  }
-  // const handleCloseDownloadPDFModal = () => {
-  //   dispatch({ type: "SETDOWNLOADPDFMODAL", payload: { downloadPDFModal: false } })
-  // }
 
   useEffect(() => { i18n.changeLanguage(langReducer) }, [langReducer])
 
@@ -54,10 +44,10 @@ export default function DenseAppBar(props) {
   return (
     <Box sx={{ flexGrow: 1 }} className="headerDenseMain"
       style={{
-        // left: (langReducer == "en" && location.pathname !== "/") ? `${sideBarWidth}px` : "0px",
+        left: langReducer == "en" ? `${sideBarWidth}px` : "0px",
         // right: langReducer == "ar" ? `${sideBarWidth}px` : "initial",
         height: `${headerHeight}px`,
-        // width: location.pathname !== "/" ? `calc(100vw - ${sideBarWidth}px)` : "100vw",
+        width: `calc(100vw - ${sideBarWidth}px)`,
         zIndex: 0,
         direction: langReducer == "en" ? "ltr" : "rtl",
       }}
@@ -71,26 +61,22 @@ export default function DenseAppBar(props) {
           zIndex: 9999
         }}
       >
-        
         <Toolbar variant="dense" sx={{ height: "100%", width: "100%", paddingLeft: "0px !important", paddingRight: "0px !important" }}>
-          {/* {location.pathname == "/" && */}
-            <Box style={{ height: 62, width: 260, padding: "0px 10px", display: "flex", alignItems: "center" }}>
-              <img src="/images/qiyas-logo.svg" />
-            </Box>
-          {/* } */}
           <Box className="" style={{ color: "#fff", width: "100%", display: "flex", justifyContent: "end" }}>
 
             {/* Language Dropdown */}
             <div style={{ height: "60px", width: "60px", display: "flex", justifyContent: "center", alignItems: "center" }}>
               <Tooltip title="" >
                 <IconButton
-                  onClick={handleLanguageIconClick}
+                  onClick={handleClick}
                   size="small"
                   aria-controls={open ? 'account-menu' : undefined}
                   aria-haspopup="true"
                   aria-expanded={open ? 'true' : undefined}
+
                 >
                   <LanguageIcon sx={{ color: "#fff" }} />
+                  {/* <Avatar sx={{ width: 32, height: 32 }}>M</Avatar> */}
                 </IconButton>
               </Tooltip>
 
@@ -98,8 +84,8 @@ export default function DenseAppBar(props) {
                 anchorEl={anchorEl}
                 id="account-menu"
                 open={open}
-                onClose={handleCloseLanguageDropdown}
-                onClick={handleCloseLanguageDropdown}
+                onClose={handleClose}
+                onClick={handleClose}
                 slotProps={{
                   paper: {
                     elevation: 0,
@@ -141,32 +127,7 @@ export default function DenseAppBar(props) {
                 {/* <Divider /> */}
               </Menu>
             </div>
-
-            {/* Download PDF Icon */}
-
-            {/* {location.pathname !== "/" &&
-              <div style={{ height: "60px", width: "60px", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                <Tooltip title="" >
-                  <IconButton
-                    onClick={handleOpenDownloadPDFModal}
-                    size="small"
-                    aria-controls={open ? 'account-menu' : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={open ? 'true' : undefined}
-                  // disabled={true}
-                  >
-                    <PictureAsPdfIcon sx={{ color: "#fff" }} />
-                  </IconButton>
-                </Tooltip>
-              </div>} */}
           </Box>
-
-          {
-            location.pathname !== "/" &&
-            <div onClick={() => navigate('/')} title="Back" className={`backIconDiv ${langReducer == "en" ? 'backIconDivEn' : 'backIconDivAr'}`} >
-              <ArrowBackIcon />
-            </div>
-          }
         </Toolbar>
       </AppBar>
     </Box >

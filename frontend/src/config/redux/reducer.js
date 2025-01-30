@@ -11,16 +11,13 @@ const INITIAL_STATE = {
     cameraIndex: "camera_1",
     arabicFont: "Readex Pro, sans-serif",
     englishFont: "Roboto, sans-serif",
-    downloadPDFModal: false,
     lang: "en",
     desks: [
         { name: "Desk", desk: "desk1", active: true, alert: 5, flash: false, disabled: false },
         { name: "Desk", desk: "desk2", active: false, alert: null, flash: false, disabled: false },
         { name: "Desk", desk: "desk3", active: false, alert: 2, flash: false, disabled: false },
         { name: "Desk", desk: "desk4", active: false, alert: null, flash: false, disabled: false }
-    ],
-    camerasList: [],
-    actionChartState: {}
+    ]
 };
 
 
@@ -94,71 +91,7 @@ export default (state = INITIAL_STATE, action) => {
         const { lang } = action.payload;
         return { ...state, lang: lang };
     }
-    else if (action.type === "SETDOWNLOADPDFMODAL") {
-        const { downloadPDFModal } = action.payload;
-        return { ...state, downloadPDFModal: downloadPDFModal };
-    }
-    // else if (action.type === "UPDATE_CAMERA_ALERTS") {
-    //     const { camId, newAlertsCount } = action.payload; // Pass only the new alerts count
-    //     const updatedCameras = state.cameras.map((camera) =>
-    //         camera.cam_id === camId
-    //             ? {
-    //                 ...camera,
-    //                 alert: newAlertsCount > 0, // Alert is active if there are new alerts
-    //                 alertsCount: newAlertsCount, // Increment count only by new alerts
-    //                 checked: false
-    //             }
-    //             : camera
-    //     );
-    //     return { ...state, cameras: updatedCameras };
-    // }
-    // else if (action.type === "CLEAR_CAMERA_ALERTS") {
-    //     const { camId } = action.payload; // Pass the specific camera ID to reset
-    //     const updatedCameras = state.cameras.map((camera) =>
-    //         camera.cam_id === camId
-    //             ? {
-    //                 ...camera,
-    //                 alert: false,        // Reset the alert flag
-    //                 alertsCount: 0,      // Reset the alerts count
-    //                 checked: true,       // Mark it as checked
-    //             }
-    //             : camera
-    //     );
-    //     return { ...state, cameras: updatedCameras };
-    // }
-    // else if (action.type === "RESET_ALL_CAMERAS") {
-    //     const initialCameras = [
-    //         { cam_id: "camera_1", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_2", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_3", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_4", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_5", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_6", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_7", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_8", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_9", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_10", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_11", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_12", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_13", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_14", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_15", alert: false, alertsCount: 0, checked: false, disabled: false },
-    //         { cam_id: "camera_16", alert: false, alertsCount: 0, checked: false, disabled: false }
-    //     ];
 
-    //     return { ...state, cameras: initialCameras }; // Reset cameras to initial state
-    // }
-    else if (action.type === "SETCAMERASLIST") {
-        const { camerasList } = action.payload;
-        return { ...state, camerasList: camerasList };
-    }
-    else if (action.type === "SETACTIONCHARTSTATE") {
-        const { cameraCount, deskKeys } = action.payload;
-        console.log("cameraCount", cameraCount);
-        console.log("deskKeys", deskKeys);
-
-        return { ...state, actionChartState: { cameraCount, deskKeys } };
-    }
 
 
     return state;

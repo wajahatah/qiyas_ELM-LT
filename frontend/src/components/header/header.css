@@ -8,8 +8,10 @@
 }
 
 .headerDenseMain {
+    /* font-family: 'DINArabic_Medium'; */
     background: #fff;
     position: relative;
+    /* transition: all .5s ease; */
 }
 
 .headerDense {
@@ -17,7 +19,133 @@
 
 }
 
-.sidebarMain {}
+.sidebarMain {
+    /* font-family: 'DINArabic_Medium'; */
+}
+
+/* .uploadCarImages{
+    font-family: 'DINArabic_Medium';
+} */
+
+
+/* .drawerItemText span {
+    font-family: 'DINArabic_Regular';
+} */
+
+/* .drawerItemActive span {
+    font-weight: bold !important;
+} */
+
+/* .showHeaderButton {
+    background: #fff;
+    height: 50px;
+    width: 50px;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 5px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .5s ease;
+} */
+
+/* .logoBox {
+    height: 100%;
+    width: 10%;
+} */
+
+/* .headerLogo {
+    height: 100%;
+    width: 100px;
+    object-fit: contain;
+} */
+
+/* .PagesNameParentDiv {
+    flex: 1;
+    color: black;
+    height: 90px !important;
+    padding-left: 30px;
+} */
+
+/* .PagesNameParentDiv ul {
+    height: 100%;
+    display: flex;
+    gap: 30px;
+    align-items: center;
+
+} */
+
+/* .PagesNameParentDiv ul li,
+.headerItem {
+    position: relative;
+    color: var(--gray);
+    list-style: none;
+    padding: 4px 0px;
+    width: 8em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all ease .2s;
+    background: transparent;
+    z-index: 1;
+    width: max-content;
+} */
+
+
+/* .PagesNameParentDiv ul li::before,
+.headerItem::before {
+    content: '';
+    position: absolute;
+    height: 100%;
+    width: 110%;
+    top: 0px;
+    opacity: 0;
+    right: 0;
+    bottom: 0;
+    left: -5px;
+    z-index: -1;
+    background: var(--gray);
+    transform: skew(-30deg);
+    transition: all ease-in-out .2s;
+} */
+
+/* .PagesNameParentDiv ul li:hover::before,
+.headerItem:hover::before {
+    opacity: 1;
+    transition: all ease-in-out .2s;
+} */
+
+/* .PagesNameParentDiv ul li:hover,
+.headerItem:hover {
+    color: #fff;
+    font-weight: none;
+    background: transparent;
+} */
+
+/* .activePage {
+    position: relative;
+    border: none;
+    border-bottom: 1px solid;
+    font-weight: bold;
+} */
+
+/* .downloadbox {
+    color: #000;
+    cursor: pointer;
+} */
+
+/* .downloadbox:hover {
+    color: #FF00FF;
+    font-weight: bold !important;
+} */
+
+/* .leftAlign {
+    text-align: left;
+} */
+
 
 .sideBarDeskItem {
     border-radius: 10px;
@@ -53,32 +181,6 @@
 .sideBarDeskItem.flash {
     /* background: red !important; */
     animation: flash 1s infinite;
-}
-
-.backIconDiv{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    /* width: 80px; */
-    padding: 5px;
-    border-radius: 50%;
-    transition: all 0.5s ease;
-}
-
-.backIconDivEn{
-    margin-right: 10px;
-}
-.backIconDivAr{
-    margin-left: 10px;
-}
-
-
-.backIconDiv:hover{
-    opacity: 0.8;
-    background: lightgray;
-    color: black;
-    
 }
 
 @keyframes flash {

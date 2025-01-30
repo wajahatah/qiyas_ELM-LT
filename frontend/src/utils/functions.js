@@ -33,27 +33,3 @@ export const get_cameras = async () => {
 
 };
 
-
-
-export const get_cameras_list = async () => {
-    return axios.get(constants.pythonDbUrl + "/stream/get_cameras_list")
-        .then(response => {
-            return response.data;
-        })
-        .catch(error => {
-            console.error("Error fetching OCR data:", error);
-            throw error;
-        });
-
-};
-export const get_camera_info = async () => {
-    return axios.get(constants.helperBaseUrl + "/stream/get_camera_info")
-        .then(response => {
-            return response.data;
-        })
-        .catch(error => {
-            console.error("Error fetching OCR data:", error);
-            throw error;
-        });
-
-};

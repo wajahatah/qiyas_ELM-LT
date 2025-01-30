@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Box, CircularProgress, Switch } from "@mui/material";
+import { Box, Button, CircularProgress, Switch } from "@mui/material";
 
 import { makeStyles } from '@material-ui/core/styles';
 import toast, { Toaster } from 'react-hot-toast';
@@ -12,7 +11,10 @@ import 'react-modern-drawer/dist/index.css';
 
 import ImageModal from "../../components/imageModal/ImageModal.jsx";
 import { constants } from "../../constants/constants.js";
+import DataCard from "../../components/DataCard/DataCard.jsx";
 
+import PendingIcon from '@mui/icons-material/Pending';
+import SportsScoreIcon from '@mui/icons-material/SportsScore';
 import CloseIcon from '@mui/icons-material/Close';
 import SettingsIcon from '@mui/icons-material/Settings';
 import SaveIcon from '@mui/icons-material/Save';
@@ -21,17 +23,13 @@ import AnomalyDataCard from "../../components/DataCard/AnomalyDataCard.jsx";
 import ActionChartModal from "../../components/chartModal/ActionChartModal.jsx";
 import axios from "axios";
 import "./ExaminationHallV2.css";
-import { formatNumberForLocale, getTodayDate, structureActionChartData } from "../../utils/utils.js";
-import DownloadPDFModal from "../../components/DownloadPDFModal/DownloadPDFModal.jsx";
-import { useAnomalyAlerts } from "../../contexts/AnomalyAlertsContext.jsx";
-import { anomalyConstants } from "../../constants/anomalyConstants.js";
+import { formatNumberForLocale, getTodayDate } from "../../utils/utils.js";
 
 
 function ExaminationHallV2() {
-
-  const location = useLocation();
   const { t } = useTranslation();
   const dispatch = useDispatch()
+
   const useStyles = makeStyles({
     playStopIcon: {
       fontSize: "60px !important",
@@ -54,92 +52,26 @@ function ExaminationHallV2() {
   });
   const classes = useStyles();
 
-  const { cameras, setCameras } = useAnomalyAlerts()
 
-
-  const camIndex = location.state.camIndex
-  const [extractedDeskAlerts, setExtractedDeskAlerts] = useState({});
-
-  useEffect(() => {
-    setExtractedDeskAlerts(cameras[camIndex - 1]?.deskAlerts || {});
-  }, [cameras])
-
-
-
-
-  // let sideBarWidth = useSelector((data) => data.sideBarWidth)
+  let sideBarWidth = useSelector((data) => data.sideBarWidth)
   let headerHeight = useSelector((data) => data.headerHeight)
 
-  // var activeDeskIndex = useSelector(data => data.activeDeskIndex);
-  // let selectedCameraIndex = useSelector((data) => data.cameraIndex)
+  var activeDeskIndex = useSelector(data => data.activeDeskIndex);
+  let selectedCameraIndex = useSelector((data) => data.cameraIndex)
   let langReducer = useSelector((data) => data.lang)
   let arabicFont = useSelector((data) => data.arabicFont)
   let englishFont = useSelector((data) => data.englishFont)
-  let downloadPDFModal = useSelector((data) => data.downloadPDFModal)
-  // let actionChartState = useSelector((data) => data.actionChartState)
   const actionChartHeaderLabel = 'Student Attention'
 
 
-
-  const deskNo = useRef(1);
-  const deskNoMapped = useRef(null);
   const [imageModalTitle, setImageModalTitle] = useState("");
   const [openImageModal, setOpenImageModal] = useState(false);
   const handleImageModalOpen = () => setOpenImageModal(true);
   const handleImageModalClose = () => setOpenImageModal(false);
 
-  const clearTotalNotificationCount = (deskNoMapped) => {
-
-    setCameras((prevCameras) => {
-      const updatedCameras = [...prevCameras];
-
-      if (!updatedCameras[camIndex - 1]) {
-        console.error("Invalid camera index");
-        return prevCameras; // Return the original state if index is invalid
-      }
-
-      const previousDeskAlerts = updatedCameras[camIndex - 1]?.deskAlerts || {};
-
-      // Create a new deskAlerts object
-      const updatedDeskAlerts = Object.keys(previousDeskAlerts).reduce((acc, key) => {
-
-        if (key.toString() === deskNoMapped.toString()) {
-          acc[key] = {
-            count: 0,
-            alert: {
-              [anomalyConstants.lookingAround]: 0,
-              [anomalyConstants.raisingHand]: 0,
-              [anomalyConstants.studentInteractingWithInvigilator]: 0,
-            },
-          };
-        } else {
-          // Retain other keys if needed
-          acc[key] = previousDeskAlerts[key];
-        }
-
-        return acc;
-      }, {});
-
-      updatedCameras[camIndex - 1] = {
-        ...updatedCameras[camIndex - 1],
-        alert: false,
-        alertsCount: 0,
-        deskAlerts: updatedDeskAlerts,
-      };
-
-      return updatedCameras;
-    });
-
-  }
 
   const [openChartModal, setOpenChartModal] = useState(false);
-  const handleChartModalOpen = (deskNoClicked, deskNoMappedContinous) => {
-    clearTotalNotificationCount(deskNoMappedContinous)
-    // setDeskNo(deskNoClicked)
-    deskNo.current = deskNoClicked;
-
-
-    deskNoMapped.current = location.state.deskNames[deskNoClicked - 1];
+  const handleChartModalOpen = () => {
     fetchDatesForAlertsChartDropdown();
     handleActionChartDropDownChange(getTodayDate());
     setOpenChartModal(true)
@@ -147,10 +79,9 @@ function ExaminationHallV2() {
   const handleChartModalClose = () => setOpenChartModal(false);
 
   const [isChartRunning, setIsChartRunning] = useState(false);
-  const [detectedImage, setDetectedImage] = useState(null);
+  const [detectedImage, setDetectedImage] = useState(null)
 
   const chartRef = useRef(null);
-
 
   const [actionChartData, setActionChartData] = useState([
     {
@@ -183,68 +114,286 @@ function ExaminationHallV2() {
 
 
 
+  let [anomalies, setAnomalies] = useState([
+    "looking around",
+    // "looking backward",
+    "using mobile phone",
+    // "standing up",
+    "raising hand",
+    "Normal"
+  ])
 
   let [mapActions, setMapActions] = useState({
     "looking around": 1,
     // "looking backward": 2,
-    // "using mobile phone": 2,
+    "using mobile phone": 2,
     // "standing up": 4,
-    "raising hand": 2,
-    "student interacting with invigilator": 3,
-    "Normal": 4,
+    "raising hand": 3,
+    "student interacting with invigilator": 4,
+    "Normal": 5,
   })
   let [mapActionsReverse, setMapActionsReverse] = useState({
     "0": "",
     "1": "looking around",
     // "2": "looking backward",
-    // "2": "using mobile phone",
+    "2": "using mobile phone",
     // "4": "standing up",
-    "2": "raising hand",
-    "3": "Student Interacting with Invigilator",
-    "4": "Normal"
+    "3": "raising hand",
+    "4": "Student Interacting with Invigilator",
+    "5": "Normal"
   })
 
+  const mapObjectKeys = {
+    "Offline": 0,
+    "monitor": 1,
+    "computer": 1,
+    "mobile phone": 2,
+    "keyboard": 3,
+    "Other": 4,
+  }
+
+
   const [camera1StreamInfo, setCamera1StreamInfo] = useState({ stream: null, data: null })
-  // const [controller1, setController1] = useState(new AbortController());
-  const controller1 = useRef(new AbortController());
 
+  const [controller1, setController1] = useState(new AbortController());
 
+  const handleStartChart = () => {
+    setCamera1StreamInfo({
+      stream: null,
+      data: null
+    })
+    setIsChartRunning(true);
+    fetchVideoStream1();
+  };
 
-
-  const handleStopChart = async () => {
-    console.log("In handleStopChart");
-
+  const handleStopChart = () => {
     setIsChartRunning(false);
     cleanupStreamControllers();
-    // setController1(new AbortController())
-    controller1.current = new AbortController();
-
+    setController1(new AbortController())
   };
 
   const cleanupStreamControllers = () => {
-    // controller1.abort();
-
-    controller1.current.abort();
+    controller1.abort();
   };
 
 
+
+  let alertTimeouts = {};
+  const [cooldown, setCooldown] = useState({}); // Track cooldowns for each desk
+
+  function handleFlashAlert(detectedObjJson, objectName, deskIndex) {
+
+    const deskKey = "desk" + deskIndex;
+    objectName = objectName.trim().toLowerCase();
+
+    const excludedObjects = ["computer", "monitor"];
+    if (!excludedObjects.includes(objectName)) {
+      const now = Date.now();
+
+      // Check if the desk is on cooldown
+      if (cooldown[deskKey] && now < cooldown[deskKey]) {
+        // If on cooldown, exit the function early
+        return;
+      }
+
+      // Trigger the flash alert
+      dispatch({ type: "TOGGLEFLASH", payload: { desk: deskKey, flash: true } });
+
+      // Clear any existing timeout for this desk
+      if (alertTimeouts[deskKey]) {
+        clearTimeout(alertTimeouts[deskKey]);
+      }
+
+      // Set a new timeout to turn off the flash after 3 seconds
+      alertTimeouts[deskKey] = setTimeout(() => {
+        dispatch({ type: "TOGGLEFLASH", payload: { desk: deskKey, flash: false } });
+        delete alertTimeouts[deskKey]; // Clean up the timeout reference
+      }, constants.flashAlertTime);
+
+      // Set the cooldown for 10 seconds from now
+      cooldown[deskKey] = now + constants.coolDownTime;
+    }
+  }
+
+
+  function handleFlashAlertForAction(detectedObjJson, objectName, deskIndex) {
+    const deskKey = "desk" + deskIndex;
+    // console.log("deskKey:", deskKey)
+
+    const now = Date.now();
+
+    // Check if the desk is on cooldown
+    if (cooldown[deskKey] && now < cooldown[deskKey]) {
+      // If on cooldown, exit the function early
+      // console.log(`deskKey: ${deskKey}`, "On cooldown, exiting early");
+      return;
+    }
+
+    // Trigger the flash alert
+    dispatch({ type: "TOGGLEFLASH", payload: { desk: deskKey, flash: true } });
+
+    // Clear any existing timeout for this desk
+    if (alertTimeouts[deskKey]) {
+      clearTimeout(alertTimeouts[deskKey]);
+    }
+
+    // // Set a new timeout to turn off the flash 
+    // alertTimeouts[deskKey] = setTimeout(() => {
+    //   dispatch({ type: "TOGGLEFLASH", payload: { desk: deskKey, flash: false } });
+    //   delete alertTimeouts[deskKey]; // Clean up the timeout reference
+    // }, constants.flashAlertTime);
+
+    // Set the cooldown 
+    setCooldown(prevCooldown => ({
+      ...prevCooldown,
+      [deskKey]: now + constants.coolDownTime,
+    }));
+  }
+
+  const isEmpty = (obj) => {
+    return Object.entries(obj).length === 0;
+  };
+
+  const [lastMessage, setLastMessage] = useState(null);
+  const [lastMessageTime, setLastMessageTime] = useState(0);
+
   useEffect(() => {
-    return async () => {
-      controller1.current.abort();
-    };
-  }, [])
+    // console.log(camera1StreamInfo);
+
+    if (camera1StreamInfo?.data) {
+      const updateNotifications = (response) => {
+
+        const currentTime = new Date().getTime();
+        for (let i = 1; i <= 4; i++) {
+          if (response.hasOwnProperty(i.toString())) {
+            // const message = `Student ${i.toString()}: ${response[i.toString()]["alert_title"]}`;
+            const message = t('student', { count: formatNumberForLocale(i) }) + ": " + t(response[i.toString()]["alert_title"].toLowerCase().replaceAll(" ", "-"));
+
+            if (activeDeskIndex == i.toString()) {
+              if (message !== lastMessage || currentTime - lastMessageTime > constants.notificationBufferTime) {
+                showToast(message);
+                setLastMessage(message);
+                setLastMessageTime(currentTime);
+              }
+            }
+          }
+        }
+      };
+
+      const updateActionChartData = (response) => {
+        // console.log("in Updating action chart data");
+        setActionChartData((prevState) => {
+          const newState = { ...prevState[0] };
+
+          for (const key in response) {
+            if (newState[key]) {
+              newState[key].data[selectedCameraIndex].push(mapActions[response[key]["alert_title"].toLowerCase()]);
+
+              const id = response[key]["id"];
+              const time = id.split(' ')[1]; // Extracting time part
+              newState[key].categories[selectedCameraIndex].push(time);
+              newState[key].ids[selectedCameraIndex].push(id);
+            }
+          }
+
+          return [newState];
+        });
+      };
+
+      if (!isEmpty(camera1StreamInfo?.data['alert'])) {
+        updateNotifications(camera1StreamInfo?.data['alert'][0]);
+
+        if (actionChartSelectedDate == getTodayDate()) {
+          updateActionChartData(camera1StreamInfo?.data['alert'][0])
+        }
+
+        for (const key in camera1StreamInfo?.data['alert'][0]) {
+          if (camera1StreamInfo?.data['alert'][0].hasOwnProperty(key)) {
+            handleFlashAlertForAction(camera1StreamInfo?.data['alert'][0], "Alert title", key);
+          }
+        }
+      }
+    }
+  }, [camera1StreamInfo])
 
 
   const [isStreamLoading, setIsStreamLoading] = useState(false)
 
   let selectedCamera = useSelector((data) => data.selectedCamera)
 
+  /////////////////////////////////////////////////
+  const cameraUrl = `${constants.pythonBaseUrl}/stream/video_feed?camera_id=${selectedCameraIndex}`;
+  const fetchVideoStream1 = async () => {
+    // console.log("In fetchVideoStream1");
+    // console.log(cameraUrl);
+
+    setIsStreamLoading(true);
+
+    try {
+
+      let jsonData = ""
+
+      const response = await fetch(cameraUrl, { signal: controller1.signal });
+      const reader = response.body.getReader();
+      let imageData = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const parts = new TextDecoder("utf-8").decode(value).split("\r\n\r\n");
+
+        parts.map((e, j) => {
+          if (e.startsWith("--frame\r\nContent-Type: image/jpeg")) { }
+          else if (e.startsWith("/9j")) { imageData = e }
+          else if (e.startsWith("--frame\r\nContent-Type: application/json")) { }
+          else if (e.startsWith("{\"analytics\"")) {
+            try {
+              jsonData = JSON.parse(e)
+              // handleAreaChartData(jsonData)
+              // console.log(jsonData);
+
+              let base64Img = "data:image/png;base64, " + imageData;
+              setCamera1StreamInfo({ stream: base64Img, data: jsonData })
+              imageData = "";
+            } catch (error) {
+              console.info(error);
+              imageData = "";
+            }
+          }
+          else if (e.trim() == "[]") {
+            let base64Img = "data:image/png;base64, " + imageData;
+            setCamera1StreamInfo({ stream: base64Img, data: jsonData })
+            imageData = "";
+          }
+          else if (e.trim() == "") { }
+          else { imageData += e }
+        })
+      }
+      console.log("stopped");
+      setCamera1StreamInfo({ stream: null, data: null });
+      setIsStreamLoading(false);
+      alert(t("stream-has-ended"));
+      handleStopChart()
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.log("Fetch request aborted");
+      } else {
+        console.error("Error:", error.message);
+      }
+      setIsStreamLoading(false);
+      setIsChartRunning(false)
+    }
+  };
+
 
   useEffect(() => {
     dispatch({ type: "REMOVEFLASHALERS" });
 
     ////// this should be uncommented when the stream is ready
-    setCamera1StreamInfo({ stream: null, data: null })
+    setCamera1StreamInfo({
+      stream: null,
+      data: null
+    })
     handleStopChart()
     // handleStartChart()
   }, [selectedCamera])
@@ -287,15 +436,14 @@ function ExaminationHallV2() {
   }
 
 
-  function handleHighChartMarkerClick(x, y, position) {
+  function handleHighChartMarkerClick(x, y, position, activeDesk) {
 
-    const id = actionChartData[0][deskNo.current].ids[location.state.camera][position];
-    let url = `${constants.clusterUrlPrefix}${location.state.clusterUrl}/stream/get_image?file_name=${id}`;
+    const id = actionChartData[0][activeDesk].ids[selectedCameraIndex][position];
 
     let config = {
       method: 'get',
       maxBodyLength: Infinity,
-      url: url,
+      url: `${constants.pythonDbUrl}/stream/get_image?alert_ID=${id}`,
       headers: {}
     };
 
@@ -314,22 +462,18 @@ function ExaminationHallV2() {
   const [alertChartDropdownDates, setAlertChartDropdownDates] = useState([]);
   const [actionChartSelectedDate, setActionChartSelectedDate] = useState(''); // State to manage the selected date
   function fetchDatesForAlertsChartDropdown() {
-
     let config = {
       method: 'get',
       maxBodyLength: Infinity,
-      url: `${constants.helperBaseUrl}/stream/get_alert_dates?cam_id=${location.state.camera}`,
+      url: `${constants.pythonDbUrl}/stream/get_alert_dates`,
       headers: {}
     };
     setAlertChartDropdownDates([])
     axios.request(config)
       .then((response) => {
-        // console.log("response", response);
-
         if (response.status === 200) {
 
-          // const parsedData = JSON.parse(response.data)
-          const parsedData = response.data
+          const parsedData = JSON.parse(response.data)
           var alertDates = parsedData.data
           alertDates = alertDates.map((item) => item.replaceAll("-", "/"))
           alertDates = alertDates.reverse();
@@ -346,17 +490,8 @@ function ExaminationHallV2() {
       .catch((error) => { console.log(error) });
   }
 
-  async function handleActionChartDropDownChange(date) {
+  function handleActionChartDropDownChange(date) {
     setActionChartSelectedDate(date)
-
-
-
-    // const { cameraCount, deskKeys } = actionChartState;
-    // const data = structureActionChartData(cameraCount, deskKeys, actionChartHeaderLabel);
-
-
-
-
     setActionChartData([...[
       {
         "1": {
@@ -389,99 +524,78 @@ function ExaminationHallV2() {
     let config = {
       method: 'get',
       maxBodyLength: Infinity,
-      // url: `${constants.helperBaseUrl}/stream/get_chart_alerts?date=${date.replaceAll("/", "-")}&cam_id=${location.state.camera}`,
-      url: `${constants.helperBaseUrl}/stream/get_chart_alerts?date=${date.replaceAll("/", "-")}&cam_id=${location.state.camera}`,
+      url: `${constants.pythonDbUrl}/stream/get_chart_alerts?date=${date.replaceAll("/", "-")}`,
       headers: {}
     };
 
     axios.request(config)
       .then((response) => {
         if (response.status === 200) {
-<<<<<<< HEAD
-          // const parsedData = JSON.parse(response.data)
-          const parsedData = response.data
+          const parsedData = JSON.parse(response.data)
           const data = parsedData.data
-=======
-          // console.log("response", response);
->>>>>>> 3ed9f83ce9fa652e0cc4d1359d2a68be8beb3955
 
-          const parsedData = response.data
-
-          if (parsedData?.success) {
-            const data = parsedData.data
-            // console.log("data", data);
-
-            let tempActionData = [...[
-              {
-                "1": {
-                  name: actionChartHeaderLabel,
-                  data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
-                },
-                "2": {
-                  name: actionChartHeaderLabel,
-                  data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
-                },
-                "3": {
-                  name: actionChartHeaderLabel,
-                  data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
-                },
-                "4": {
-                  name: actionChartHeaderLabel,
-                  data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
-                  ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
-                },
-              }
-            ]]
-
-
-            for (let i = 0; i < data.length; i++) {
-              let cam_id = data[i].cam_id;
-              let candidate = data[i].candidate;
-              let alert_ID = data[i].alert_ID;
-              let alert_title = data[i].alert_title;
-              let fileName = data[i].image;
-              // let image = data[i].image;
-              let time = data[i].time;
-
-              // console.log(cam_id, candidate, time);
-
-              tempActionData[0][candidate].data[cam_id].push(mapActions[alert_title.toLowerCase()]);
-              tempActionData[0][candidate].categories[cam_id].push(time);
-              // tempActionData[0][candidate].ids[cam_id].push(alert_ID);
-              tempActionData[0][candidate].ids[cam_id].push(fileName);
+          let tempActionData = [...[
+            {
+              "1": {
+                name: actionChartHeaderLabel,
+                data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
+              },
+              "2": {
+                name: actionChartHeaderLabel,
+                data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
+              },
+              "3": {
+                name: actionChartHeaderLabel,
+                data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
+              },
+              "4": {
+                name: actionChartHeaderLabel,
+                data: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                categories: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] },
+                ids: { camera_1: [], camera_2: [], camera_3: [], camera_4: [], camera_5: [], camera_6: [], camera_7: [], camera_8: [], camera_9: [], camera_10: [], camera_11: [], camera_12: [], camera_13: [], camera_14: [], camera_15: [] }
+              },
             }
+          ]]
+          for (let i = 0; i < data.length; i++) {
+            let cam_id = data[i].cam_id;
+            let candidate = data[i].candidate;
+            let alert_ID = data[i].alert_ID;
+            let alert_title = data[i].alert_title;
+            // let image = data[i].image;
+            let time = data[i].time;
 
-
-            setActionChartData([...tempActionData])
-
+            tempActionData[0][candidate].data[cam_id].push(mapActions[alert_title.toLowerCase()]);
+            tempActionData[0][candidate].categories[cam_id].push(time);
+            tempActionData[0][candidate].ids[cam_id].push(alert_ID);
           }
+          // console.log("tempActionData:", tempActionData[0][activeDeskIndex].data['camera_1'].length);
+          setActionChartData([...tempActionData])
         }
       })
       .catch((error) => { console.log(error) });
 
   }
-  // useEffect(() => {
-  //   fetchDatesForAlertsChartDropdown();
-  //   handleGetConfig()
-  // }, [])
+  useEffect(() => {
+    fetchDatesForAlertsChartDropdown();
+    handleGetConfig()
+  }, [])
+
   const memoizedActionChart = useMemo(() => {
     // This function will only re-run if camera1StreamInfo changes
     return <ActionChartModal
       openChartModal={openChartModal}
       closeChartModal={handleChartModalClose}
-      areaChartData={[actionChartData[0][deskNo.current]]}
+      areaChartData={[actionChartData[0][activeDeskIndex]]}
       classes={classes}
       chartRef={chartRef}
       handleHighChartMarkerClick={handleHighChartMarkerClick}
-      activeDeskIndex={deskNoMapped.current}
-      selectedCameraIndex={location.state.camera}
+      activeDeskIndex={activeDeskIndex}
       alertChartDropdownDates={alertChartDropdownDates}
       setAlertChartDropdownDates={setAlertChartDropdownDates}
       handleActionChartDropDownChange={handleActionChartDropDownChange}
@@ -489,7 +603,7 @@ function ExaminationHallV2() {
       setSelectedDate={setActionChartSelectedDate}
       mapActionsReverse={mapActionsReverse}
     />;
-  }, [openChartModal, actionChartData, deskNo.current]);
+  }, [openChartModal, actionChartData, activeDeskIndex]);
 
 
 
@@ -582,153 +696,19 @@ function ExaminationHallV2() {
     setDisableSaveButton(false)
   };
 
-
-
-  const handleGeneratePdf = async () => {
-    console.log("in handleGeneratePdf");
-    try {
-      // setIsPdfDownloading(true)
-      const url = `${constants.pythonDbUrl}/stream/download_pdf`;
-      const params = { date_select: "09-08-2024" };
-      const headers = { accept: 'application/json' };
-      const response = await axios.get(url, { params, headers, responseType: 'blob' });
-
-
-      if (response.headers['content-type'] === 'application/pdf') {
-
-        // PDF successfully generated, initiate download
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', 'Report.pdf');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-
-      }
-
-      // setIsPdfDownloading(false)
-      return true;
-
-    } catch (error) {
-      // setIsPdfDownloading(false)
-      console.log("error:", error);
-      return false;
-    }
-  }
-
-
-
-  const socketRef = useRef(null);
-  const connectWebSocket = () => {
-    console.log("Connecting to Stream WebSocket server...");
-
-    // socketRef.current = new WebSocket(`${constants.streamWebSocketUrl}/1/${location.state.camera}`);
-    let socketUrl = constants.clusterSocketPrefix + location.state.clusterUrl + constants.clusterSocketSuffix + "/1/" + location.state.camera;
-
-    socketRef.current = new WebSocket(socketUrl);
-
-    socketRef.current.onopen = () => {
-      console.log("Stream WebSocket connection established");
-    };
-
-    socketRef.current.onmessage = (event) => {
-      setIsStreamLoading(false);
-      const data = JSON.parse(event.data);
-      // console.log("Stream WebSocket data received:", data);
-
-      // {
-      //   frame:"",
-      //   behaviour:[],
-      //   absent:{},
-      // }
-      setIsChartRunning(true);
-      let base64Img = "data:image/png;base64, " + data.frame;
-      setCamera1StreamInfo({ stream: base64Img, data: { behaviour: data.behaviour, absent: data.absent } })
-    };
-
-    socketRef.current.onerror = (error) => {
-      console.error("Stream WebSocket error:", error);
-      setIsStreamLoading(false);
-
-    };
-
-    socketRef.current.onclose = () => {
-      console.log("Stream WebSocket connection closed");
-      setIsStreamLoading(false);
-    };
-  }
-  useEffect(() => {
-    setIsStreamLoading(true);
-    setTimeout(connectWebSocket, 1000);
-    return () => {
-      console.log("Closing Stream WebSocket connection...");
-      console.log(socketRef.current);
-
-      // socketRef.current.close();
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-    };
-  }, [])
-
-  // useEffect(() => {
-  //   console.log("camera1StreamInfo", camera1StreamInfo);
-  //   console.log(location.state.deskNames)
-  //   if (camera1StreamInfo?.data) {
-  //     // console.log("camera1StreamInfo.data['behaviour'][index])", camera1StreamInfo?.data['behaviour'][0]);
-
-  //     location.state.deskNames.map((deskNo, index) => {
-
-  //       // console.log(
-
-  //       //   camera1StreamInfo?.data ?
-  //       //     (camera1StreamInfo.data['absent']['card_resetting'][index + 1] ? // {1: false, 2: false, 3: false, 4: false}
-  //       //       "None" :
-  //       //       camera1StreamInfo.data['behaviour'][index]) : //  ['Normal', 'Normal', 'Normal', 'Normal']
-  //       //     "None"
-  //       // )
-
-  //       // console.log("camera1StreamInfo?.data:", camera1StreamInfo?.data);
-  //       console.log("camera1StreamInfo.data['absent']['card_resetting'][index + 1]:", camera1StreamInfo.data['absent']['card_resetting'][index + 1]);
-  //       console.log("camera1StreamInfo.data['behaviour'][index]):", camera1StreamInfo.data['behaviour'][index]);
-
-
-
-  //     })
-  //     console.log("");
-
-  //   }
-
-  // }, [camera1StreamInfo])
-
-
-
-  // useEffect(() => {
-  //   console.log("totalNotificationCount:", totalNotificationCount);
-
-  // }, [totalNotificationCount])
-
   return (
     <div className="mainBox"
       style={{
         position: "relative",
-        // left: langReducer == "en" ? `${sideBarWidth}px` : "initial",
+        left: langReducer == "en" ? `${sideBarWidth}px` : "initial",
         // right: langReducer == "ar" ? `${sideBarWidth}px` : "initial",
-        // width: `calc(100vw - ${sideBarWidth}px)`,
+        width: `calc(100vw - ${sideBarWidth}px)`,
         height: `calc(100vh - ${headerHeight}px)`,
         direction: langReducer == "en" ? "ltr" : "rtl",
         fontFamily: langReducer == "en" ? englishFont : arabicFont,
       }}>
 
-      {/* <Button variant="contained" onClick={handleGeneratePdf}
-        sx={{ position: "absolute", left: langReducer == "ar" && "85px", right: langReducer == "en" && "95px", top: 10, background: "purple", "&:hover": { background: "purple" } }}>
-        PDF
-      </Button> */}
-
-      {/* <Box className={`settingsIconBox ${langReducer == "en" ? 'settingsIconBoxltr' : 'settingsIconBoxrtl'}`}>
+      <Box className={`settingsIconBox ${langReducer == "en" ? 'settingsIconBoxltr' : 'settingsIconBoxrtl'}`}>
         {isBackendRestarting && (
           <CircularProgress size={50} thickness={4} sx={{ position: "absolute", color: "#952D98" }} />
         )}
@@ -745,7 +725,7 @@ function ExaminationHallV2() {
           }}
         />
 
-      </Box> */}
+      </Box>
 
       <Drawer
         open={isConfigOpen}
@@ -836,47 +816,62 @@ function ExaminationHallV2() {
         <div style={{ width: "100%", display: "flex", justifyContent: "space-between" }}>
 
           {/* Start/Stop Button */}
-          {/* <span className={classes.heading}>{t('live-attention')}</span> */}
-          <span className={classes.heading} style={{ display: "flex", justifyContent: "start", alignItems: "center", flex: 1 }}>{t('behaviour')}</span>
-          <span className={classes.heading} style={{ display: "flex", alignItems: "center", flex: 1 }}>
-            {t('camera', { count: formatNumberForLocale(camIndex) }).toUpperCase()}
-          </span>
-          {/* <span className={classes.heading} style={{ display: "flex", justifyContent: "end", alignItems: "center", border: "2px solid", padding: "0px 10px", borderRadius: "10px", background: "#0056a6b8", color: "white" }}>
-            {`${t('no. of alerts', { count: formatNumberForLocale(camIndex) }).toUpperCase()}:`} <b style={{ padding: "0px 10px", fontSize: "22px" }}>{formatNumberForLocale(totalNotificationCount)}</b>
-          </span> */}
+          <span className={classes.heading}>{t('live-attention')}</span>
 
           {/* <div style={{ display: "flex", gap: 10 }}>
             <Button variant="contained" onClick={showToast}>Toast</Button>
             <Button variant="contained" onClick={closeAllNotifications}>Close</Button>
           </div> */}
 
-
+          {isChartRunning ? (
+            <Button variant="contained" style={{ padding: 0, borderRadius: "5px !important" }} onClick={handleStopChart}>{t('stop')}</Button>
+          ) : (
+            <Button variant="contained" style={{ padding: 0, borderRadius: "5px !important" }} onClick={handleStartChart}>{t('start')}</Button>
+          )}
 
         </div>
         <div style={{ width: "100%", height: "100%", display: "flex", justifyContent: "space-evenly", alignItems: "center", gap: "10px" }}>
 
-          {
-            location.state.deskNames.map((deskNo, index) => {
-              const cardResetting =
-                camera1StreamInfo?.data?.absent?.card_resetting?.[index + 1];
-              const behaviour =
-                camera1StreamInfo?.data?.behaviour?.[index];
+          <DataCard
+            impressionOn="ATTENTIVE"
+            icon={<SportsScoreIcon sx={{ fontSize: "3.5vw" }} />}
+            // percentage={camera1StreamInfo?.data?.length ? camera1StreamInfo?.data[1][activeDeskIndex].Att_Score?.toFixed(2) + "%" : "None"}
+            // percentage={camera1StreamInfo?.data ? camera1StreamInfo?.data['analytics'][activeDeskIndex].Att_Score?.toFixed(2) + "%" : "None"}
+            percentage={
+              camera1StreamInfo?.data ?
+                (camera1StreamInfo.data['absent']['card_resetting'][activeDeskIndex] ?
+                  t('none') :
+                  camera1StreamInfo?.data['analytics'][activeDeskIndex].Att_Score?.toFixed(2) + "%") :
+                t('none')
+            }
+          />
 
-              return (
-                <AnomalyDataCard
-                  key={index}
-                  title={t('desk', { count: formatNumberForLocale(deskNo) }).toUpperCase()}
-                  noOfAlerts={extractedDeskAlerts[deskNo]?.count ? extractedDeskAlerts[deskNo]?.count : null}
-                  camera1StreamInfo={
-                    camera1StreamInfo?.data
-                      ? (cardResetting != "False" ? "None" : behaviour || "None")
-                      : "None"
-                  }
-                  onClick={() => handleChartModalOpen(index + 1, deskNo)}
-                />
-              );
-            })
-          }
+          <DataCard
+            impressionOn="NON ATTENTIVE"
+            icon={<PendingIcon sx={{ fontSize: "3.5vw" }} />}
+            // percentage={camera1StreamInfo?.data ? camera1StreamInfo.data['analytics'][activeDeskIndex]["Other"].toString() + "%" : "None"}
+            percentage={
+              camera1StreamInfo?.data ?
+                (camera1StreamInfo.data['absent']['card_resetting'][activeDeskIndex] ?
+                  t('none') :
+                  camera1StreamInfo.data['analytics'][activeDeskIndex]["Other"].toString() + "%") :
+                t('none')
+            }
+          />
+          <AnomalyDataCard
+            title="BEHAVIOUR"
+            // icon={<TroubleshootIcon sx={{ fontSize: 42 }} />}
+            // camera1StreamInfo={camera1StreamInfo?.data ? camera1StreamInfo.data['behaviour'][activeDeskIndex - 1] : "None"}
+            camera1StreamInfo={
+              camera1StreamInfo?.data ?
+                (camera1StreamInfo.data['absent']['card_resetting'][activeDeskIndex] ?
+                  "None" :
+                  camera1StreamInfo.data['behaviour'][activeDeskIndex - 1]) :
+                "None"
+            }
+            // anomalies={anomalies}
+            onClick={() => handleChartModalOpen()}
+          />
         </div>
       </div>
 
@@ -893,6 +888,9 @@ function ExaminationHallV2() {
           {/* Displaying stream */}
           <div style={{ height: "calc(100% - 30px)", display: "flex", gap: "10px", width: "100%", position: "relative" }}>
             <div style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", }}>
+
+              {/* <img src="/images/exHall.png" alt="Stream" style={{ height: "calc(99%)", width: "100%", objectFit: "contain" }} /> */}
+
               {(camera1StreamInfo.stream) ?
                 <img src={camera1StreamInfo.stream} alt="Stream" style={{ height: "calc(99%)", width: "100%", objectFit: "contain" }} />
                 :
@@ -904,11 +902,62 @@ function ExaminationHallV2() {
                       </Box>
                       : t('stream-is-offline')
                   }
+
                 </div>
               }
             </div>
+
+
           </div>
         </div>
+
+
+        {/* <div style={{ width: "30%", height: "100%" }}>
+          <div style={{ display: "flex", height: "100%", flexDirection: "column", justifyContent: "space-between" }}>
+
+            <span className={classes.heading}>Notifications</span>
+            <div style={{ background: "#e2f1ff", height: "calc(100% - 30px)", borderRadius: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: "0px", width: "100%", position: "relative" }}>
+
+              <div style={{
+                background: "#fff",
+                borderRadius: 10,
+                width: "90%",
+                height: "40px",
+                margin: "10px",
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                padding: "0px 5px",
+                boxShadow: " 0 3px 10px rgba(0, 0, 0, 0.1), 0 3px 3px rgba(0, 0, 0, 0.05)",
+                animation: "0.35s cubic-bezier(0.21, 1.02, 0.73, 1) 0s 1 normal forwards running go2645569136"
+              }}>
+                <div>
+                  🔔
+                </div>
+                <div style={{ fontSize: "1.1vw" }}>Something went wrong</div>
+              </div>
+
+              <div style={{
+                background: "#fff",
+                borderRadius: 10,
+                width: "90%",
+                height: "40px",
+                margin: "10px",
+                display: "flex",
+                gap: 10,
+                alignItems: "center",
+                padding: "0px 5px",
+                boxShadow: " 0 3px 10px rgba(0, 0, 0, 0.1), 0 3px 3px rgba(0, 0, 0, 0.05)",
+                animation: "0.35s cubic-bezier(0.21, 1.02, 0.73, 1) 0s 1 normal forwards running go2645569136"
+              }}>
+                <div>
+                  🔔
+                </div>
+                <div style={{ fontSize: "1.1vw" }}>Something went wrong</div>
+              </div>
+            </div>
+          </div>
+        </div> */}
       </div>
 
       <ImageModal
@@ -918,8 +967,6 @@ function ExaminationHallV2() {
         title={t(imageModalTitle.replaceAll(" ", "-").toLocaleLowerCase())}
       />
       {memoizedActionChart}
-
-      <DownloadPDFModal title="Download PDF" openPDFModal={downloadPDFModal} closePDFModal={() => dispatch({ type: "SETDOWNLOADPDFMODAL", payload: { downloadPDFModal: false } })} />
       <Toaster containerStyle={{ zIndex: "999" }} />
     </div>
   );

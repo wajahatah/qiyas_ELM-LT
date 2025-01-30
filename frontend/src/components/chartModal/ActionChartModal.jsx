@@ -34,7 +34,6 @@ const ActionChartModal = React.memo(function ChartModal(props) {
         handleMouseUp,
         handleHighChartMarkerClick,
         activeDeskIndex,
-        selectedCameraIndex,
         alertChartDropdownDates,
         setAlertChartDropdownDates,
         handleActionChartDropDownChange,
@@ -43,21 +42,9 @@ const ActionChartModal = React.memo(function ChartModal(props) {
         mapActionsReverse
     } = props;
 
-    // let selectedCameraIndex = useSelector((data) => data.cameraIndex)
+    let selectedCameraIndex = useSelector((data) => data.cameraIndex)
     const chartComponentRef = useRef(null); // Reference for Highcharts instance
-    // var activeDesk = useSelector(data => data.activeDeskIndex);
-
-
-    useEffect(() => { 
-        console.log("areaChartData", areaChartData[0]?.data[selectedCameraIndex].length);
-        // areaChartData[0]?.data[selectedCameraIndex].length > 5 ? 5
-        
-        // if (areaChartData.length > 0) {
-        //     let dates = areaChartData[0]?.dates;
-        //     setAlertChartDropdownDates(dates);
-        //     setSelectedDate(dates[dates.length - 1]);
-        // }
-    }, [areaChartData])
+    var activeDesk = useSelector(data => data.activeDeskIndex);
 
 
     const [behaviourHighChartOptions, setBehaviourHighChartOptions] = useState({
@@ -88,7 +75,7 @@ const ActionChartModal = React.memo(function ChartModal(props) {
                             let x = e.point.category;
                             let y = e.point.y;
                             let seriesIndex = e.point.index;
-                            handleHighChartMarkerClick(x, y, seriesIndex);
+                            handleHighChartMarkerClick(x, y, seriesIndex, activeDesk);
                         }
                     }
                 },
@@ -118,13 +105,13 @@ const ActionChartModal = React.memo(function ChartModal(props) {
         xAxis: {
             categories: [],
             zoomEnabled: true,
-            max: areaChartData[0]?.data[selectedCameraIndex].length > 5 ? 5 : null,
+            max: areaChartData[0].data[selectedCameraIndex].length > 5 ? 5 : null,
             reversed: langReducer == "en" ? false : true, // Reverse the x-axis for RTL
 
         },
         yAxis: {
             min: 0,
-            max: 3,
+            max: 4,
             offset: 220,
             title: {
                 enabled: false,
@@ -139,15 +126,15 @@ const ActionChartModal = React.memo(function ChartModal(props) {
                         case 0: return t(".");
                         case 1: return t('looking-around');
                         // case 2: return "LOOKING BACKWARD";
-                        // case 2: return t('using-mobile-phone');
+                        case 2: return t('using-mobile-phone');
                         // case 4: return "STANDING UP";
-                        case 2: return t('raising-hand');
-                        case 3: return t('interacting-with-invigilator');
+                        case 3: return t('raising-hand');
+                        case 4: return t('interacting-with-invigilator');
                         default: return e.value;
                     }
                 }
             },
-            tickPositions: [0, 1, 2, 3], // Ensure all labels are displayed
+            tickPositions: [0, 1, 2, 3, 4], // Ensure all labels are displayed
             tickInterval: 1, // Ensure there is a tick for each level
             opposite: langReducer === "en" ? false : true,
 
@@ -171,8 +158,7 @@ const ActionChartModal = React.memo(function ChartModal(props) {
                         enabled: false
                     },
                     xAxis: {
-                        // max: (areaChartData[0]?.data && areaChartData[0]?.data[selectedCameraIndex]) && areaChartData[0]?.data[selectedCameraIndex].length > 5 ? 5 : null,
-                        max: 5,
+                        max: (areaChartData[0]?.data && areaChartData[0]?.data[selectedCameraIndex]) && areaChartData[0]?.data[selectedCameraIndex].length > 5 ? 5 : null,
                         // labels: {
                         //     enabled: true,
                         //     formatter: function () {
@@ -192,17 +178,15 @@ const ActionChartModal = React.memo(function ChartModal(props) {
 
     const updateChartOptions = (data) => {
 
-        const dataLength = areaChartData[0]?.data ? data[0]?.data[selectedCameraIndex].length : 0
+        const dataLength = areaChartData[0].data ? data[0].data[selectedCameraIndex].length : 0
         const newMax = dataLength > 5 ? 5 : null; // Determine new max value for xAxis
         const shouldHideLabels = dataLength === 0; // Hide labels if no data
-        console.log("newMax", newMax);
-        
         setBehaviourHighChartOptions((prevOptions) => ({
             ...prevOptions,
             series: [{
                 ...prevOptions.series[0],
                 name: t('behaviour'),
-                data: data[0]?.data[selectedCameraIndex],
+                data: data[0].data[selectedCameraIndex],
                 type: 'area',
                 threshold: null,
                 tooltip: {
@@ -214,9 +198,9 @@ const ActionChartModal = React.memo(function ChartModal(props) {
             }],
             xAxis: {
                 ...prevOptions.xAxis,
-                categories: data[0]?.categories[selectedCameraIndex],
+                categories: data[0].categories[selectedCameraIndex],
                 zoomEnabled: true,
-                max: dataLength > 5 ? 5 : null, // Set max value dynamically
+                max: newMax, // Set max value dynamically
                 reversed: langReducer == "en" ? false : true, // Reverse the x-axis for RTL
                 labels: {
                     enabled: !shouldHideLabels, // Disable labels if no data
@@ -240,7 +224,7 @@ const ActionChartModal = React.memo(function ChartModal(props) {
                                 let x = e.point.category;
                                 let y = e.point.y;
                                 let seriesIndex = e.point.index;
-                                handleHighChartMarkerClick(x, y, seriesIndex);
+                                handleHighChartMarkerClick(x, y, seriesIndex, activeDesk);
                             }
                         }
                     }
@@ -250,19 +234,16 @@ const ActionChartModal = React.memo(function ChartModal(props) {
 
         const chart = chartComponentRef.current?.chart;
         if (chart) {
-            const dataLength = data[0]?.data[selectedCameraIndex].length;
+            const dataLength = data[0].data[selectedCameraIndex].length;
             const newMax = dataLength > 5 ? dataLength - 1 : 5;
             const currentExtremes = chart.xAxis[0].getExtremes();
             if (currentExtremes.max < newMax) {
                 chart.xAxis[0].setExtremes(newMax - 5, newMax, true, false);
             }
-            chart.series[0].setData(data[0]?.data[selectedCameraIndex], true, false, false); // Update data without animation
+            chart.series[0].setData(data[0].data[selectedCameraIndex], true, false, false); // Update data without animation
             chart.redraw();
         }
     };
-    // console.log("selectedCameraIndex", selectedCameraIndex);
-    // console.log("areaChartData", areaChartData);
-
 
     useEffect(() => {
 
@@ -270,13 +251,13 @@ const ActionChartModal = React.memo(function ChartModal(props) {
             const chart = chartComponentRef.current.chart;
 
             // Update the series data
-            chart.series[0].setData(areaChartData[0]?.data[selectedCameraIndex], false);
+            chart.series[0].setData(areaChartData[0].data[selectedCameraIndex], false);
 
             // Update the xAxis categories
-            chart.xAxis[0].setCategories(areaChartData[0]?.categories[selectedCameraIndex], false);
+            chart.xAxis[0].setCategories(areaChartData[0].categories[selectedCameraIndex], false);
 
             // Optionally, adjust the extremes
-            const dataLength = areaChartData[0]?.data[selectedCameraIndex].length;
+            const dataLength = areaChartData[0].data[selectedCameraIndex].length;
             const newMax = dataLength > 5 ? dataLength - 1 : 5;
             const currentExtremes = chart.xAxis[0].getExtremes();
             if (currentExtremes.max < newMax) {

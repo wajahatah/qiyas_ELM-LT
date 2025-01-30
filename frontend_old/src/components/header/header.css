@@ -1,0 +1,132 @@
+:root {
+    --purple: rgb(30, 22, 86);
+    --blue: rgb(42, 110, 187);
+    --pink: rgb(149, 45, 152);
+    --lightpink: rgb(114, 46, 165);
+    --cyan: rgb(68, 200, 245);
+    --gray: rgb(128, 130, 133)
+}
+
+.headerDenseMain {
+    background: #fff;
+    position: relative;
+}
+
+.headerDense {
+    background-color: #fff !important;
+
+}
+
+.sidebarMain {}
+
+.sideBarDeskItem {
+    border-radius: 10px;
+    /* height: 60px; */
+    margin-top: 5px;
+    margin-bottom: 4px;
+    padding: 10px;
+    padding-left: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.selectDeskText {
+    /* font-weight: bold; */
+}
+
+.attentionAlertCountText {
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: sans-serif
+}
+
+.sideBarDeskItem.active {
+    background: rgb(178, 231, 255);
+}
+
+.sideBarDeskItem.flash {
+    /* background: red !important; */
+    animation: flash 1s infinite;
+}
+
+.backIconDiv{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    /* width: 80px; */
+    padding: 5px;
+    border-radius: 50%;
+    transition: all 0.5s ease;
+}
+
+.backIconDivEn{
+    margin-right: 10px;
+}
+.backIconDivAr{
+    margin-left: 10px;
+}
+
+
+.backIconDiv:hover{
+    opacity: 0.8;
+    background: lightgray;
+    color: black;
+    
+}
+
+@keyframes flash {
+    0% {
+        /* background: rgb(178, 231, 255); */
+
+    }
+
+    50% {
+        background: rgb(222, 0, 0);
+        color: black;
+    }
+
+    100% {
+        /* background: rgb(178, 231, 255); */
+
+    }
+}
+
+.sideBarDeskItem.active .selectDeskText {
+    color: #000;
+    font-weight: bold;
+}
+
+
+
+@keyframes zoomInOut {
+    0% {
+        transform: scale(1);
+    }
+
+    100% {
+        transform: scale(1.1);
+    }
+}
+
+
+@media only screen and (max-width: 830px) {
+    /* .PagesNameParentDiv ul li{
+        color: var(--cyan);
+    } */
+
+    .headerLogo {
+        width: 80px;
+        height: 60px;
+    }
+
+    .PagesNameParentDiv {
+        display: none;
+    }
+}

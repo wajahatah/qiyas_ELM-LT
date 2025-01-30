@@ -31,13 +31,13 @@ function Header() {
         pageName={pageName}
         setPageName={setPageName}
       />
-      {/* <AppDrawer
+      <AppDrawer
         state={state}
         setState={setState}
         toggleDrawer={toggleDrawer}
         pageName={pageName}
         setPageName={setPageName}
-      /> */}
+      />
     </>
   );
 }

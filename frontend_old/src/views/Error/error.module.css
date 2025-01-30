@@ -1,0 +1,20 @@
+.main {
+    box-sizing: border-box;
+    min-height: calc(100vh - 92px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: #e4e4e4;
+    color: #000;
+}
+.error404{
+    font-weight: bold;
+    font-family: cursive;
+    font-size: 3em;
+}
+
+.pageNotFound{
+    font-family: cursive;
+    font-size: 1.5em;
+}
