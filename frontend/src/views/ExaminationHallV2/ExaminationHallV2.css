@@ -1,0 +1,97 @@
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+    user-select: none;
+}
+
+
+.mainBox {
+    display: flex;
+    flex-direction: column;
+    background-size: cover;
+    overflow: hidden;
+    background: #f3f3ff;
+}
+
+
+.cardsParentBox {
+    height: 30vh;
+    padding: 10px;
+}
+
+
+.streamParentBox {
+    display: flex;
+    gap: 10px;
+    height: 60vh;
+    border-top: 5px solid #eaeaea;
+    padding: 10px;
+}
+
+.chartsParentBox {
+    padding: 10px;
+}
+
+
+.settingsIconBox {
+    position: fixed;
+    bottom: 20px;
+    z-index: 1;
+
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all .3s ease;
+}
+
+.settingsIconBoxltr {
+    right: 10px;
+}
+
+.settingsIconBoxrtl {
+    left: 10px;
+}
+
+.configDrawer {
+    display: flex;
+    flex-direction: column;
+    z-index: 99999 !important;
+}
+
+.offcanvas-header {
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1rem;
+    background: #183E61;
+    color: #c7cad2;
+}
+
+.offcanvas-body {
+    flex-grow: 1;
+    padding: 1rem .5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+.border-bottom {
+    border-bottom: 1px solid #dee2e7 !important;
+}
+
+.configItemTitle {
+    /* background: #183E61; */
+    color: #183E61;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    width: max-content;
+    font-weight: bold;
+}

@@ -1,0 +1,381 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.mainBox {
+  position: relative;
+  isolation: isolate;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  background-color: #28231D;
+  color: white;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.mainLabel {
+  background-color: lightgray;
+  color: #28231D;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  font-weight: bolder;
+  padding: 5px 10px;
+}
+
+.gridContainer {
+  position: relative;
+  z-index: 1;
+  /* Ensure sibling elements don't conflict */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: 1fr 1fr 1fr 1fr;
+  gap: 5px;
+  padding: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: calc(100vh - 112px);
+}
+
+/* Base styles shared by all grid items */
+.gridItemBase {
+  position: relative;
+  background-color: #183E61;
+  color: white;
+  text-align: center;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 1.2rem;
+  transition: all 0.5s ease;
+  display: flex;
+  flex-direction: column;
+  /* justify-content: center; */
+  align-items: center;
+  /* gap: 5px; */
+}
+
+/* Enabled grid item styles */
+.gridItem {
+  cursor: pointer;
+}
+
+/* Disabled grid item styles */
+.gridItemDisabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  /* pointer-events: none; */
+}
+
+/* Hover effects only for enabled grid items */
+.gridItem:hover {
+  /* opacity: 0.9; */
+  /* transform: scale(1.01); */
+  background-color: #235889;
+}
+
+.gridItemIconDiv {
+  /* background: #5B9BD5; */
+  /* background: #5B9BD5; */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 5px;
+  margin-bottom: 5px;
+  gap: 8px;
+  /* border: 2px solid white; */
+  width: 100%;
+  /* width: 80%;
+    height: 60%; */
+
+  /* border: 3px solid #000; */
+  border-radius: 3px;
+  /* padding: 0.2vw 1vw; */
+  /* width: 50%; */
+  /* box-shadow: 0px 0px 5px 5px rgba(212, 203, 203, 0.5); */
+}
+
+
+.gridItemImg {
+  width: 100%;
+  height: 3.5vw;
+  object-fit: contain;
+}
+
+.deskImgBg {
+  background: #5B9BD5;
+}
+
+.deskBoxShadow {
+  box-shadow: 30px 30px 30px -10px rgba(0, 0, 0, 0.25),
+    inset 15px 15px 10px var(--shadowColor),
+    2px 2px 10px var(--shadowColor)
+}
+
+.deskIconBox {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  /* width: 3vw; 
+     height: 4vw;  */
+  /* border: 2px solid black;  */
+  /* margin: 5px; display: flex;  */
+  /* justify-content: center; 
+     align-items: center; */
+
+  /* --border-angle: 0deg;
+     border-radius: 12px;
+     width: 100px;
+     height: 100px;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     box-shadow: 0px 2px 4px hsl(0 0% 0% / 25%);
+     animation: border-angle-rotate 2s infinite linear;
+     border: 0.5rem solid transparent;
+     position: relative; */
+}
+
+.disabledDesk {
+  opacity: 0.5;
+  /* cursor: not-allowed; */
+}
+
+.rainbow {
+  position: relative;
+  --border-size: 0.15rem;
+  border: var(--border-size) solid transparent;
+  border-image: conic-gradient(from var(--angle),
+      var(--border-color) 0deg 50deg,
+      #5B9BD5 50deg 360deg) 3 stretch;
+  background: rgb(255 255 255 / var(--opacity));
+}
+
+
+
+@property --opacity {
+  syntax: "<number>";
+  initial-value: 0.1;
+  inherits: false;
+}
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+
+@keyframes rotate {
+  to {
+    --angle: 360deg;
+  }
+}
+
+.rainbow {
+  animation: rotate 5s linear infinite;
+  animation-delay: var(--delay);
+}
+
+
+
+/* .deskIconBox img{
+    width: 2.5vw; 
+    height: 2.5vw; 
+} */
+
+.gridItemContentLabel {
+  font-size: 16px;
+  font-weight: bold;
+  /* margin-top: 5px; */
+  /* margin-bottom: 5px; */
+
+}
+
+.gridItemAlertDiv {
+  position: absolute;
+  top: -8px;
+  background: rgb(198, 2, 2);
+  color: rgb(255, 255, 255);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 100%;
+  width: 40px;
+  height: 40px;
+  font-weight: bold;
+  z-index: 1;
+}
+
+.gridItemAlertDivEn {
+  right: -8px;
+}
+
+.gridItemAlertDivAr {
+  left: -8px;
+}
+
+
+
+.deskItemAlertDiv {
+  position: absolute;
+  top: -8px;
+  background: rgb(198, 2, 2);
+  color: rgb(255, 255, 255);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 100%;
+  width: 20px;
+  height: 20px;
+  font-weight: bold;
+  font-size: 10px;
+  z-index: 1;
+}
+
+.deskItemAlertDivEn {
+  right: -8px;
+}
+
+.deskItemAlertDivAr {
+  left: -8px;
+}
+
+.shake {
+  /* animation: shake 1s infinite ease-in-out; */
+  animation: shake .5s ease-in-out;
+  /* transform: rotate(12deg); */
+  /* border: 2px solid red; */
+}
+
+@keyframes shake {
+  0% {
+    transform: translate(1px, 1px) rotate(0deg);
+  }
+
+  10% {
+    transform: translate(-1px, -2px) rotate(-1deg);
+  }
+
+  20% {
+    transform: translate(-3px, 0px) rotate(1deg);
+  }
+
+  30% {
+    transform: translate(3px, 2px) rotate(0deg);
+  }
+
+  40% {
+    transform: translate(1px, -1px) rotate(1deg);
+  }
+
+  50% {
+    transform: translate(-1px, 2px) rotate(-1deg);
+  }
+
+  60% {
+    transform: translate(-3px, 1px) rotate(0deg);
+  }
+
+  70% {
+    transform: translate(3px, 1px) rotate(-1deg);
+  }
+
+  80% {
+    transform: translate(-1px, -1px) rotate(1deg);
+  }
+
+  90% {
+    transform: translate(1px, 2px) rotate(0deg);
+  }
+
+  100% {
+    transform: translate(1px, -2px) rotate(-1deg);
+  }
+
+
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+/* @media only screen and (min-width: 1200px) {
+  .mainBox{
+
+    background: red;
+  }
+} */
+
+/* Large devices (laptops/desktops, 992px and up) */
+/* @media only screen and (min-width: 992px) {
+  .mainBox{
+
+    background: blue;
+  }
+} */
+
+/* Medium devices (landscape tablets, 768px and up) */
+/* @media only screen and (min-width: 768px) {
+  .mainBox{
+
+    background: green;
+  }
+} */
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (max-width: 772px) {
+
+  .gridItemContentLabel {
+    font-size: 14px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+
+  }
+
+  .gridContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
+  }
+
+  .gridItemImg {
+    height: 5vw;
+  }
+
+  .gridItemIconDiv {
+    gap: 10px;
+  }
+}
+
+@media only screen and (max-width: 605px) {
+  .gridContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media only screen and (max-width: 482px) {
+  .gridContainer {
+    grid-template-columns: repeat(1, 1fr);
+  }
+
+  .gridItemContentLabel {
+    font-size: 14px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+
+  }
+
+  .gridItemImg {
+    height: 35px;
+  }
+
+}
+
+/* Extra small devices (phones, 600px and down) */
+/* @media only screen and (max-width: 600px) {
+  .mainBox{
+
+    background: yellow;
+  }
+} */
