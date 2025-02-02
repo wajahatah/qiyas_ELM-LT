@@ -279,8 +279,8 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
             left_point = desk_roi[str(key)]['left_x'], desk_roi[str(key)]['left_y']
             right_point = desk_roi[str(key)]['right_x'], desk_roi[str(key)]['right_y']
             cv2.line(frame, left_point, right_point, (0, 255, 0), 1)
-            print("a",a,"b",b,"e",e,"d",d)
-            print("=====================================")
+            # print("a",a,"b",b,"e",e,"d",d)
+            # print("=====================================")
             
             """
             # cv2.putText(frame, str(angle), (int((a+e)/2) - 10, int((b+d)/2 - 10)),cv2.FONT_HERSHEY_SIMPLEX, 1,(0,0,255),2)
@@ -341,7 +341,7 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
 
                 elif abs(angle) > LA_angle_threshold:
                     looking_around_list[int(key)-1] = 1
-                    print("looking around")
+                    # print("looking around")
                     cv2.putText(frame, "looking around", (int((a+e)/2), int((b+d)/2)),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,8),2)
 
                 if config_dict.get('visual_field_drawing'):
@@ -349,8 +349,8 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
                     # cx = center[0]
                     # cy = center[1]
 
-                    cv2.putText(frame, str(center), (int((a+e)/2), int((b+d)/2)),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,8),2)
-                    cv2.circle(frame, center, 5, (0, 0, 255), -1)
+                    # cv2.putText(frame, str(center), (int((a+e)/2), int((b+d)/2)),cv2.FONT_HERSHEY_SIMPLEX,0.8,(0,255,8),2)
+                    # cv2.circle(frame, center, 5, (0, 0, 255), -1)
                     left_point, right_point = visual_region(center, LA_angle_threshold)
                     # frame_visual_area = cv2.line(frame, center, (center[0],center[1]-50), (255, 255, 255), 4)
                     # frame_visual_area = draw_angle_line(frame, center, LA_angle_threshold)
