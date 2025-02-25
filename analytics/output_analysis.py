@@ -334,7 +334,7 @@ def analytical_computation(candidate_score, desk_roi, initial_appends, before, h
                 else:
                     allowed_angle = in_angle
 
-                LA_angle_threshold = allowed_angle - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 30)
+                LA_angle_threshold = allowed_angle - int(((d+b)/2 - diff) / (desk_roi[str(key)]['ymax'] - diff) * 15)
                 
                 if abs(angle) < LA_angle_threshold:
                     looking_around_list[int(key)-1] = 0
